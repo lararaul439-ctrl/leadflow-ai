@@ -121,6 +121,7 @@ A 2 to 3 minute walkthrough is scripted in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIP
 | The same email arrives twice | The email ID is looked up before analysis and the write is an upsert. |
 | Two runs process the same email at the same moment | A claim lock in a shared tab: the first active claim in sheet order wins, the other run stands aside before calling the model, and every exit releases its claim. Tested for real (one draft where two used to appear) and with 27 simulated concurrency tests. |
 | Keys and credentials | Stored in n8n credentials, not in the nodes. The exported workflows only carry placeholders, and a test scans them for secrets. |
+| Personal data sent to the AI provider | Only the sender's name, the subject and the cleaned message are sent. The sender's e-mail address is not (the draft is addressed from the flow's own field), and card numbers, IBANs and ID numbers are masked first. Names, phone numbers and anything written in the message body still go to the provider, so a real deployment needs a data-processing agreement. |
 | Personal data in n8n's own records | Successful and manual runs store no execution data; the error log masks e-mail addresses and caps the message; no node writes to the console. Failed runs are kept on purpose (to diagnose and retry them). Retention and access to executions are instance settings. |
 | Personal data in the tests | Tests use only fictional data and a test Gmail account with a sender filter. |
 
@@ -163,8 +164,9 @@ The workflow, node, tab and status names are in Spanish, because the project was
 ## Running the tests
 
 ```
-npm test                  # 241 tests, about 4 seconds, nothing to install (Node.js 20+)
-npm run mutation-check    # breaks the workflow 30 ways (about 2 minutes); every break must be caught
+npm test                  # 242 tests, about 4 seconds, nothing to install (Node.js 20+)
+npm run mutation-check    # breaks the workflow 31 ways (about 12 minutes); every break must be caught
+npm run lint              # static analysis of the tests and of the Code nodes (downloads ESLint on the fly; no dependency is added)
 npm run load-emails       # prints the 100 fictional load-test emails
 ```
 
@@ -172,7 +174,7 @@ The tests run the exported workflow and the real Code-node source on a **simulat
 
 ## Test results
 
-- **Automated:** 241 tests (18 workflow integrity, 38 on the Code nodes, 28 whole-workflow scenarios, 4 load tests, 27 concurrency, 119 adversarial, 7 privacy). All pass. The same suite fails 128 tests against the v1.1 export, which is how the second review round found what needed fixing. The mutation check breaks 30 things one at a time and every one is caught.
+- **Automated:** 242 tests (18 workflow integrity, 38 on the Code nodes, 28 whole-workflow scenarios, 4 load tests, 27 concurrency, 119 adversarial, 8 privacy). All pass. The same suite fails 131 tests against the v1.1 export, which is how the second review round found what needed fixing. The mutation check breaks 31 things one at a time and every one is caught. ESLint reports no errors or warnings on the tests and on the extracted Code nodes, and a GitHub Actions workflow (`.github/workflows/ci.yml`) runs the tests, the lint and the mutation check on every pull request.
 - **Real runs:** 16 manual test cases on the real services (detail in [docs/test-cases.md](docs/test-cases.md), including the failures and how I fixed them), five real executions of v1.1 for the first audit, and eleven for v1.2 (#104 to #114: the duplicate-draft race before and after the lock, a hostile email, an honest email, an AI failure and its retry, and a production run of the published workflow).
 - **Load:** 100 fictional emails sent back to back to the real workflow (v1.0): 100 rows and 100 drafts, no duplicates, no draft sent, about 10 minutes. A scripted, repeatable version now runs on the simulation. The real test has not been repeated since the lock was added (the lock costs about six Sheets calls per email, see the limitations).
 - **Measurement:** three emails processed in the same batch took between 15 and 17 seconds in total, about 5 or 6 seconds per email. No time or money savings have been measured and none is claimed.
@@ -199,7 +201,9 @@ The most useful part of the project was testing it with awkward cases:
 ```
 README.md, README.es.md     English (default) and Spanish
 .env.example                checklist of the values to configure (no secrets, not read by anything)
-package.json                scripts for the tests; no dependencies
+package.json                scripts for the tests and the lint; no dependencies
+eslint.config.js            static-analysis rules (no plugins needed)
+.github/workflows/ci.yml    CI: tests, lint and mutation check on every pull request
 workflows/
   leadflow-ai.json          main workflow (n8n export, placeholders instead of credentials)
   leadflow-errores.json     error workflow
@@ -209,6 +213,7 @@ docs/
   arquitectura.md           the same, in Spanish
   AUDIT.md                  what the review found, fixed and left open
   TEST_REPORT.md            what was tested, real versus simulated
+  READINESS.md              senior-style review: what holds up and what blocks real e-mail
   KNOWN_LIMITATIONS.md      what it does not do
   test-cases.md             16 manual test cases on the real services (English)
   casos-de-prueba.md        the same, in Spanish

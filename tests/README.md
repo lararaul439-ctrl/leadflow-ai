@@ -1,8 +1,9 @@
 # Automated tests
 
 ```
-npm test                  # 241 tests, about 4 seconds, no dependencies, no network
-npm run mutation-check    # breaks the workflow in 30 ways, one at a time (about 2 minutes); every break must make a test fail
+npm test                  # 242 tests, about 4 seconds, no dependencies, no network
+npm run mutation-check    # breaks the workflow in 31 ways, one at a time (about 12 minutes); every break must make a test fail
+npm run lint              # extracts the Code nodes to .lint/nodes and runs ESLint over them and over tests/ (needs the network once, to fetch ESLint)
 npm run load-emails       # prints the 100 fictional load-test emails as JSON (to send by hand to a TEST mailbox)
 ```
 
@@ -47,8 +48,9 @@ If one of these is wrong, the tests that depend on it prove less than they appea
 | `load.test.js` | 4 | 100 fictional emails in one batch, the same 100 again, and 7 failures inside the 100 healed by `Reintentar fallidos`. |
 | `concurrency.test.js` | 27 | The claim lock: two executions interleaved at every step boundary, the worst moment, overlapping batches, a crash while holding a claim, claim expiry, a claim that cannot be seen, release on every exit, recovery (C01 to C17, U01 to U10). C12 is a documented limitation. |
 | `adversarial.test.js` | 119 | Hostile and honest emails against the code around the model: orders in Spanish and English, hidden and look-alike characters, hidden HTML, tag break-outs, an obedient "model", invented figures, links, payment talk, tampered recipients. Honest emails (B01 to B14) must **not** be flagged. |
-| `privacy.test.js` | 7 | What n8n is allowed to keep: retention settings, nothing written to the console, masked error messages, card/IBAN/ID numbers reaching neither the model, the sheet, the draft nor any log, and a claim log that holds only identifiers. |
-| `mutation-check.js` | 30 mutations | Not a test: a script that checks the tests would notice a regression. Eleven break the original behaviour, ten the lock, six the hardening and the stored fields, three the privacy settings. A mutation that changes nothing is reported as an error, so a typo cannot pass as "detected". |
+| `privacy.test.js` | 8 | What n8n and the AI provider are allowed to see: retention settings, nothing written to the console, masked error messages, card/IBAN/ID numbers reaching neither the model, the sheet, the draft nor any log, and a claim log that holds only identifiers. |
+| `mutation-check.js` | 31 mutations | Not a test: a script that checks the tests would notice a regression. Eleven break the original behaviour, ten the lock, six the hardening and the stored fields, four the privacy settings and the data sent to the model. A mutation that changes nothing is reported as an error, so a typo cannot pass as "detected". |
+| `extract-code-nodes.js` | | Not a test: writes the Code nodes of the exported workflows to `.lint/nodes/` (ignored by git) so that `npm run lint` can analyse them. |
 | `fixtures/data.js`, `fixtures/load.js` | | Fictional emails and model answers. All addresses are `example.test` or `example.com`. |
 | `helpers/` | | The engine and the loaders. |
 

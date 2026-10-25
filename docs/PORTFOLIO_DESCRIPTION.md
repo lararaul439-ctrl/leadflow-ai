@@ -6,9 +6,11 @@ Ready-to-paste texts about LeadFlow AI for GitHub, LinkedIn and a CV. They only 
 
 **Repository description** (the "About" box, 350 characters at most):
 
-> AI-assisted email triage built with n8n, Gmail, Google Sheets and an LLM: classifies customer requests, logs them and leaves a draft reply for a person to review. Never sends email on its own. Includes two audit rounds, 241 automated tests and honest limitations.
+> AI-assisted email triage built with n8n, Gmail, Google Sheets and an LLM: classifies customer requests, logs them and leaves a draft reply for a person to review. Never sends email on its own. Includes two audit rounds, 242 automated tests and honest limitations.
 
-**Topics:** `n8n` `ai-automation` `workflow-automation` `llm` `gmail` `google-sheets` `prompt-injection` `human-in-the-loop` `testing` `javascript`
+**Topics:** `n8n` `ai-automation` `workflow-automation` `llm` `gmail` `google-sheets` `prompt-injection` `human-in-the-loop` `groq` `email-automation` `testing` `javascript`
+
+To apply them: on the repository page, click the gear icon next to **About**, paste the description, and add the topics. Repository settings cannot be changed from the automated review environment, so they have to be set by hand.
 
 **Pinned-repo blurb (one line):** Human-in-the-loop AI email triage on n8n: validated by code, drafts only, tested and audited.
 
@@ -28,7 +30,7 @@ What I built and checked:
 - A pipeline across Gmail, Google Sheets and an LLM API (JSON output enforced by a schema), with the business rules in code ("the AI proposes, the code decides").
 - Protections for data and misuse: masking of card numbers, IBANs and ID numbers before the model sees them; size limits; plain-text spreadsheet writes so email content cannot become a formula; detection of instructions aimed at the AI (including hidden and look-alike characters), with the priority set by code; a risky draft is replaced by a fixed holding reply; no execution data kept for successful runs.
 - Reliability: retries, a 30-second timeout, failures saved with the reason instead of stopping a batch, a manual entry to retry them, idempotent writes and a claim lock so a repeated or simultaneous email changes nothing.
-- A technical audit in two rounds (25 findings, all fixed, mitigated or documented) and 241 automated tests that run the exported workflow on a simulation, plus a mutation check and real-service test cases, with real and simulated results kept apart.
+- A technical audit in two rounds (25 findings, all fixed, mitigated or documented) and 242 automated tests that run the exported workflow on a simulation, plus a mutation check and real-service test cases, with real and simulated results kept apart.
 
 Stack: n8n, Gmail, Google Sheets, Groq (`gpt-oss-120b`), JavaScript, Node.js test runner.
 
@@ -43,7 +45,7 @@ Pick two or three. Each one is backed by something in the repository.
 - Designed and built an n8n workflow that classifies customer emails with an LLM, logs them in Google Sheets and creates Gmail drafts for human approval; the workflow has no node able to send email, and a test enforces it.
 - Moved business rules out of the prompt and into code (priority, review requirements, flags for prices, deadlines and unsupported claims) after tests showed the model followed the same instruction in one run and not in the next.
 - Audited the workflow and fixed spreadsheet formula injection, unmasked IBAN and ID numbers, unbounded input size and a failure mode in which an AI outage stopped a whole batch; in a second round reproduced a duplicate-draft race on the real services, closed it with a claim lock and hardened the code against hostile emails; documented what stays open.
-- Wrote 241 automated tests (Node.js built-in runner, no dependencies) that run the exported workflow and its real code on a simulation of n8n and the three services, including concurrency and adversarial suites, with a mutation check that confirms the tests catch 30 deliberate regressions.
+- Wrote 242 automated tests (Node.js built-in runner, no dependencies) that run the exported workflow and its real code on a simulation of n8n and the three services, including concurrency and adversarial suites, with a mutation check that confirms the tests catch 31 deliberate regressions.
 - Documented real versus simulated test evidence, known limitations and security trade-offs in plain language for reviewers.
 
 ## One-line answers
@@ -62,7 +64,7 @@ Textos listos para pegar sobre LeadFlow AI en GitHub, LinkedIn y un CV. Solo dic
 
 **Descripción del repositorio** (el cuadro «About», 350 caracteres como máximo):
 
-> Triaje de correos con IA hecho con n8n, Gmail, Google Sheets y un LLM: clasifica solicitudes de clientes, las registra y deja un borrador de respuesta para que lo revise una persona. No envía correos por sí solo. Incluye dos rondas de auditoría, 241 pruebas automáticas y limitaciones documentadas.
+> Triaje de correos con IA hecho con n8n, Gmail, Google Sheets y un LLM: clasifica solicitudes de clientes, las registra y deja un borrador de respuesta para que lo revise una persona. No envía correos por sí solo. Incluye dos rondas de auditoría, 242 pruebas automáticas y limitaciones documentadas.
 
 **Una línea para el repositorio fijado:** Triaje de correos con IA y control humano en n8n: validado por código, solo borradores, probado y auditado.
 
@@ -82,7 +84,7 @@ Qué construí y qué comprobé:
 - Un flujo entre Gmail, Google Sheets y una API de LLM (salida JSON con esquema), con las reglas de negocio en código («la IA propone, el código decide»).
 - Protecciones de datos y de uso indebido: ocultación de tarjetas, IBAN y documentos de identidad antes de que los vea el modelo; límites de tamaño; escrituras en texto plano para que el contenido de un correo no pueda ser una fórmula; detección de instrucciones dirigidas a la IA (incluidos caracteres ocultos y parecidos), con la prioridad fijada por código; un borrador con riesgo se sustituye por una respuesta de cortesía fija; sin datos de ejecución guardados en las ejecuciones correctas.
 - Fiabilidad: reintentos, 30 segundos de timeout, fallos guardados con su motivo en vez de parar una tanda, una entrada manual para reintentarlos y escrituras idempotentes con una reserva compartida para que un correo repetido o simultáneo no cambie nada.
-- Una auditoría técnica en dos rondas (25 hallazgos, todos corregidos, mitigados o documentados) y 241 pruebas automáticas que ejecutan el workflow exportado sobre una simulación, más una comprobación por mutaciones y casos de prueba sobre los servicios reales, con los resultados reales y los simulados separados.
+- Una auditoría técnica en dos rondas (25 hallazgos, todos corregidos, mitigados o documentados) y 242 pruebas automáticas que ejecutan el workflow exportado sobre una simulación, más una comprobación por mutaciones y casos de prueba sobre los servicios reales, con los resultados reales y los simulados separados.
 
 Tecnologías: n8n, Gmail, Google Sheets, Groq (`gpt-oss-120b`), JavaScript, ejecutor de pruebas de Node.js.
 
@@ -95,5 +97,5 @@ Elige dos o tres. Cada una tiene respaldo en el repositorio.
 - Diseñé y construí un workflow de n8n que clasifica correos de clientes con un LLM, los registra en Google Sheets y crea borradores en Gmail para aprobación humana; el workflow no tiene ningún nodo capaz de enviar correo y una prueba lo comprueba.
 - Saqué las reglas de negocio del prompt y las llevé a código (prioridad, requisitos de revisión, avisos de precios, plazos y afirmaciones sin respaldo) después de que las pruebas mostraran que el modelo seguía la misma instrucción en una ejecución y no en la siguiente.
 - Audité el workflow y corregí la inyección de fórmulas en la hoja, IBAN y documentos sin ocultar, entradas sin límite de tamaño y un modo de fallo en el que una caída de la IA paraba una tanda entera; en una segunda ronda reproduje con los servicios reales una carrera de borradores duplicados, la cerré con una reserva y refuerzo el código frente a correos hostiles; documenté lo que sigue abierto.
-- Escribí 241 pruebas automáticas (ejecutor integrado de Node.js, sin dependencias) que ejecutan el workflow exportado y su código real sobre una simulación de n8n y de los tres servicios, con suites de concurrencia y adversariales, y una comprobación por mutaciones que confirma que las pruebas detectan 30 regresiones deliberadas.
+- Escribí 242 pruebas automáticas (ejecutor integrado de Node.js, sin dependencias) que ejecutan el workflow exportado y su código real sobre una simulación de n8n y de los tres servicios, con suites de concurrencia y adversariales, y una comprobación por mutaciones que confirma que las pruebas detectan 31 regresiones deliberadas.
 - Documenté en lenguaje claro la evidencia real frente a la simulada, las limitaciones conocidas y los compromisos de seguridad.

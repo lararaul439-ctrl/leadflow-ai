@@ -121,6 +121,7 @@ Hay un guion de 2 a 3 minutos en [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Tod
 | El mismo correo llega dos veces | Se busca el identificador del correo antes de analizarlo y la escritura es un upsert. |
 | Dos ejecuciones procesan el mismo correo a la vez | Una reserva en una pestaña compartida: gana la primera reserva activa por orden de fila, la otra ejecución se aparta antes de llamar al modelo y toda salida libera su reserva. Probado de verdad (un borrador donde antes salían dos) y con 27 pruebas de concurrencia simuladas. |
 | Claves y credenciales | Guardadas en las credenciales de n8n, no en los nodos. Los workflows exportados solo llevan marcadores, y una prueba los revisa en busca de secretos. |
+| Datos personales enviados al proveedor de IA | Solo viajan el nombre del remitente, el asunto y el mensaje ya limpio. La dirección de correo del remitente no se envía (el borrador se dirige con el campo del propio flujo), y las tarjetas, IBAN y documentos de identidad se ocultan antes. Los nombres, teléfonos y cualquier cosa escrita en el cuerpo del mensaje sí llegan al proveedor, así que un uso real necesita un acuerdo de tratamiento de datos. |
 | Datos personales en los registros de n8n | Las ejecuciones correctas y las manuales no guardan datos; el registro de errores oculta las direcciones de correo y limita el mensaje; ningún nodo escribe en la consola. Las ejecuciones fallidas se conservan a propósito (para diagnosticarlas y reintentarlas). La retención y el acceso a las ejecuciones son ajustes de la instancia. |
 | Datos personales en las pruebas | Pruebas solo con datos ficticios y una cuenta de Gmail de pruebas con filtro de remitente. |
 
@@ -163,8 +164,9 @@ Los nombres de workflows, nodos, pestañas y estados están en español porque e
 ## Ejecutar las pruebas
 
 ```
-npm test                  # 241 pruebas, unos 4 segundos, nada que instalar (Node.js 20+)
-npm run mutation-check    # rompe el workflow de 30 maneras (unos 2 minutos); cada rotura debe detectarse
+npm test                  # 242 pruebas, unos 4 segundos, nada que instalar (Node.js 20+)
+npm run mutation-check    # rompe el workflow de 31 maneras (unos 12 minutos); cada rotura debe detectarse
+npm run lint              # análisis estático de las pruebas y de los nodos de código (descarga ESLint al vuelo; no se añade ninguna dependencia)
 npm run load-emails       # imprime los 100 correos ficticios de la prueba de carga
 ```
 
@@ -172,7 +174,7 @@ Las pruebas ejecutan el workflow exportado y el código real de los nodos de có
 
 ## Resultados de las pruebas
 
-- **Automáticas:** 241 pruebas (18 de integridad del workflow, 38 de los nodos de código, 28 escenarios del workflow completo, 4 de carga, 27 de concurrencia, 119 adversariales, 7 de privacidad). Todas pasan. La misma batería falla 128 pruebas contra la exportación v1.1, que es como la segunda ronda de revisión encontró lo que había que corregir. La comprobación por mutaciones rompe 30 cosas una a una y todas se detectan.
+- **Automáticas:** 242 pruebas (18 de integridad del workflow, 38 de los nodos de código, 28 escenarios del workflow completo, 4 de carga, 27 de concurrencia, 119 adversariales, 8 de privacidad). Todas pasan. La misma batería falla 131 pruebas contra la exportación v1.1, que es como la segunda ronda de revisión encontró lo que había que corregir. La comprobación por mutaciones rompe 31 cosas una a una y todas se detectan. ESLint no da errores ni avisos sobre las pruebas y sobre los nodos de código extraídos, y un workflow de GitHub Actions (`.github/workflows/ci.yml`) ejecuta las pruebas, el lint y la comprobación por mutaciones en cada pull request.
 - **Ejecuciones reales:** 16 casos manuales sobre los servicios reales (detalle en [docs/casos-de-prueba.md](docs/casos-de-prueba.md), con los fallos y sus correcciones), cinco ejecuciones reales de la v1.1 para la primera auditoría y once para la v1.2 (de la #104 a la #114: la carrera de borradores duplicados antes y después de la reserva, un correo hostil, uno honesto, un fallo de la IA y su reintento, y una ejecución de producción del workflow publicado).
 - **Carga:** 100 correos ficticios enviados seguidos al workflow real (v1.0): 100 filas y 100 borradores, sin duplicados, sin ningún borrador enviado, en unos 10 minutos. Ahora hay una versión con guion y repetible sobre la simulación. La prueba real no se ha repetido desde que se añadió la reserva (la reserva cuesta unas seis llamadas a Sheets por correo, ver las limitaciones).
 - **Medición:** tres correos procesados en una misma tanda tardaron entre 15 y 17 segundos en total, unos 5 o 6 segundos por correo. No se han medido ahorros de tiempo ni de dinero y no se afirma ninguno.
@@ -199,7 +201,9 @@ Lo más útil del proyecto fue probarlo con casos incómodos:
 ```
 README.md, README.es.md     inglés (por defecto) y español
 .env.example                lista de valores a configurar (sin secretos, no lo lee nada)
-package.json                scripts de las pruebas; sin dependencias
+package.json                scripts de las pruebas y del lint; sin dependencias
+eslint.config.js            reglas del análisis estático (no necesita plugins)
+.github/workflows/ci.yml    CI: pruebas, lint y comprobación por mutaciones en cada pull request
 workflows/
   leadflow-ai.json          workflow principal (exportación de n8n, marcadores en vez de credenciales)
   leadflow-errores.json     flujo de errores
@@ -209,6 +213,7 @@ docs/
   arquitectura.md           lo mismo, en español
   AUDIT.md                  lo que encontró la revisión, lo corregido y lo abierto (inglés)
   TEST_REPORT.md            qué se probó, real frente a simulado (inglés)
+  READINESS.md              revisión de madurez: qué aguanta y qué impide usar correo real (inglés)
   KNOWN_LIMITATIONS.md      lo que no hace (inglés)
   test-cases.md             16 casos manuales sobre los servicios reales (inglés)
   casos-de-prueba.md        lo mismo, en español

@@ -11,10 +11,12 @@ The report separates two kinds of evidence, and I ask the reader not to merge th
 
 | Check | Result |
 |---|---|
-| `npm test` (241 tests: 18 integrity, 38 Code-node, 28 scenario, 4 load, 27 concurrency, 119 adversarial, 7 privacy) | 241 passed, 0 failed, about 4 seconds |
-| `npm run mutation-check` (30 deliberate breaks) | 30 of 30 caught |
-| Same suite against the v1.1 export | 113 passed, 128 failed (the new files fail there by design, see [AUDIT.md](AUDIT.md)) |
-| Real executions on v1.2 | #110 to #114 (below), all as expected |
+| `npm test` (242 tests: 18 integrity, 38 Code-node, 28 scenario, 4 load, 27 concurrency, 119 adversarial, 8 privacy) | 242 passed, 0 failed, about 4 seconds |
+| `npm run mutation-check` (31 deliberate breaks) | 31 of 31 caught |
+| `npm run lint` (ESLint 10.1.0 on the tests, the config and the 6 extracted Code nodes, 20 files) | 0 errors, 0 warnings. The rule `no-misleading-character-class` is switched off for the Code nodes on purpose: the sanitiser lists invisible and combining characters to strip them |
+| markdownlint (structure rules, line length and similar style rules off) | Clean after removing blank lines at the end of one file. The only other hit is the second language title in `PORTFOLIO_DESCRIPTION.md`, which is intended |
+| Same suite against the v1.1 export | 111 passed, 131 failed (the new files fail there by design, see [AUDIT.md](AUDIT.md)) |
+| Real executions on v1.2 | #110 to #115 (below), all as expected |
 | Real executions of the lock | #108 and #109 (one draft where two runs used to give two) |
 | Scenarios that exist **only** as simulation | Sheets outage, Gmail draft failure, AI timeout, crash while holding a claim, claim expiry, huge email, 100-email batch, every adversarial case except the one in #110 |
 | Not run | Repeat of the 100-real-email test, a real timeout, a real Sheets or Gmail outage, the Gmail Trigger in production, real concurrency on the final build |
@@ -65,9 +67,9 @@ Run on the in-memory engine; nothing here proves the real services behave the sa
 |---|---|---|
 | `concurrency.test.js` | 27 | Two executions of the same email interleaved at **every** step boundary: always one draft, one row, one model call. The worst moment (both claim before either reads). Overlapping batches in opposite order. Different emails never block each other. A crash while holding the claim blocks the email for 10 minutes and no longer. A claim that cannot be seen stops the run with an error. Every way out releases the claim. Recovery by retry. C12 documents a known limitation instead of hiding it. |
 | `adversarial.test.js` | 119 | A01 to A40: orders aimed at the AI in Spanish and English (override, fake system messages, role change, prompt requests, data exfiltration, encoded text). B01 to B14: **honest** emails that must not be flagged. C01 to C10: evasion with invisible, direction-control, look-alike and full-width characters. D01 to D36: risks in the model's draft (prices, promises, invented figures, links, payment talk, internal details). E01 to E07: invalid model answers. F01 to F03: recipient and header tricks. G01 to G05: hidden HTML. H01 to H04: whole batches with a model that obeys every order. |
-| `privacy.test.js` | 7 | Workflow retention settings, no console output, bounded and masked error log, card/IBAN/ID never reach the model, sheet, draft or logs, the claim log holds identifiers only. |
+| `privacy.test.js` | 8 | Workflow retention settings, no console output, bounded and masked error log, card/IBAN/ID never reach the model, sheet, draft or logs, the sender's address never reaches the model while the draft is still addressed to it, the claim log holds identifiers only. |
 
-Before/after on the same tests: against the v1.1 export the adversarial file passes 27 of 119, the concurrency file 2 of 27 and the privacy file 3 of 7. The mutation check (30 breaks) shows the tests notice when a protection is removed.
+Before/after on the same tests: against the v1.1 export the adversarial file passes 27 of 119, the concurrency file 2 of 27 and the privacy file 3 of 8. The mutation check (31 breaks) shows the tests notice when a protection is removed.
 
 ## Load: the 100-email test
 
@@ -100,7 +102,7 @@ All on the live n8n Cloud workflow, manual execution, fictional data, no email s
 
 ## Real executions on v1.2
 
-Fictional data, no email sent. Executions #104 to #113 are manual runs of the draft version that was then published (the draft was compared node by node with the repository before and after: zero differences). Execution #114 is a production run of the published version. Gmail drafts and test rows were left in place and can be deleted.
+Fictional data, no email sent. Executions #104 to #113 are manual runs of the draft version that was then published (the draft was compared node by node with the repository before and after: zero differences). Execution #114 is a production run of the published version. Execution #115 is a manual run of the draft that removed the sender address from the model-bound text, published afterwards (the draft was compared node by node with the repository: zero differences). Gmail drafts and test rows were left in place and can be deleted.
 
 | Execution | What was done | Observed |
 |---|---|---|
@@ -112,8 +114,9 @@ Fictional data, no email sent. Executions #104 to #113 are manual runs of the dr
 | #112 | Same kind of entry with the AI endpoint deliberately wrong in the draft (never published; restored and verified: zero differences) | The call failed after its retries; row saved as `error_ia` with the reason; **no draft**; the claim was released; execution status success |
 | #113 | `Reintentar fallidos` after restoring the endpoint | The `error_ia` row was reprocessed in place (no new row); one draft; claim released |
 | #114 | **Production** run of the published workflow (form entry with the standard example IBAN) | IBAN stored as `[IBAN oculto]` and flagged; the five new columns filled; one draft; the execution is **not stored** (n8n answers "not found"), as configured |
+| #115 | Form entry (fictional name, address and a quote request) after the sender address was removed from the model-bound text | Row complete with the five customer fields; one draft addressed to the form's address, greeting by name; read through the sheet and Gmail only (manual runs are not stored either) |
 
-Executions #110 to #113 were read with their full data before the privacy settings were applied; after that, successful runs leave no data to read, which is why #114 is verified through the sheet and Gmail only.
+Executions #110 to #113 were read with their full data before the privacy settings were applied; after that, successful runs leave no data to read, which is why #114 and #115 are verified through the sheet and Gmail only.
 
 Earlier real tests T01 to T16 (v1.0 and early v1.1 work) are in [test-cases.md](test-cases.md).
 

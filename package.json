@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --test",
     "mutation-check": "node tests/mutation-check.js",
-    "load-emails": "node tests/fixtures/load.js"
+    "load-emails": "node tests/fixtures/load.js",
+    "lint": "node tests/extract-code-nodes.js && npx --yes eslint@9 ."
   },
   "engines": {
     "node": ">=20"

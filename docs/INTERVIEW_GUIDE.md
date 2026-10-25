@@ -13,7 +13,7 @@ Material para preparar la conversación técnica sobre el proyecto. Está escrit
 3. **Idea central.** «La IA propone, el código decide.» El modelo da categoría, prioridad, resumen y borrador, pero las reglas que protegen al negocio están en código: reclamación siempre prioridad alta, precios o plazos en el borrador se marcan, una orden dirigida a la IA no puede subir la prioridad, y un borrador con cualquier señal de riesgo se sustituye por una respuesta de cortesía fija.
 4. **Control humano.** No hay ningún nodo de envío, y una prueba falla si aparece uno.
 5. **Fiabilidad.** Si la API de IA falla, el correo se guarda con el motivo y la tanda sigue; un disparador manual reintenta solo esas filas. Es idempotente: repetir un correo no duplica nada, ni siquiera si dos ejecuciones empiezan a la vez (reserva compartida en una pestaña de la hoja).
-6. **Pruebas.** 241 pruebas automáticas sobre una simulación (con 27 de concurrencia y 119 adversariales), una comprobación por mutaciones con 30 roturas, y pruebas reales documentadas. Auditoría en dos rondas: 18 hallazgos en la primera y 7 en la segunda.
+6. **Pruebas.** 242 pruebas automáticas sobre una simulación (con 27 de concurrencia y 119 adversariales), una comprobación por mutaciones con 31 roturas, lint con ESLint y CI en GitHub Actions, y pruebas reales documentadas. Auditoría en dos rondas: 18 hallazgos en la primera y 7 en la segunda.
 7. **Límites.** El reintento es manual; el enmascarado y la detección de inyección son por patrones; la reserva tiene casos límite conocidos (una caída bloquea ese correo hasta 10 minutos); hay ajustes de la instancia de n8n que solo puede cambiar su propietario; no está probado con clientes ni datos reales.
 
 ## Preguntas que pueden hacerte y cómo contestarlas
@@ -31,10 +31,10 @@ Se mitiga, no se elimina. El correo va dentro de una etiqueta como dato, se le q
 Reintenta tres veces con 30 s de timeout; si sigue fallando, el correo se guarda con estado `error_ia` y el motivo, el resto de la tanda continúa y el flujo de errores no se dispara. `Reintentar fallidos` lee esas filas y las reprocesa, y como la escritura es un upsert por identificador no hay duplicados. Se probó en real provocando el fallo con una URL equivocada solo en la versión borrador, sin publicarla, y se comprobó después que el workflow publicado coincidía con el repositorio.
 
 **¿Cómo lo probaste?**
-En tres niveles. 16 casos manuales sobre los servicios reales, documentados con sus fallos. 241 pruebas automáticas sobre una simulación del workflow exportado, que ejecutan el código real de los nodos. Y ejecuciones reales para cada ronda de cambios: 5 para la v1.1 y 11 para la v1.2 (la carrera de borradores antes y después de la reserva, un correo hostil, uno honesto, un fallo de la IA con su reintento y una ejecución de producción). Digo siempre cuál es cuál, porque la simulación no es una prueba de extremo a extremo.
+En tres niveles. 16 casos manuales sobre los servicios reales, documentados con sus fallos. 242 pruebas automáticas sobre una simulación del workflow exportado, que ejecutan el código real de los nodos. Y ejecuciones reales para cada ronda de cambios: 5 para la v1.1 y 11 para la v1.2 (la carrera de borradores antes y después de la reserva, un correo hostil, uno honesto, un fallo de la IA con su reintento y una ejecución de producción). Digo siempre cuál es cuál, porque la simulación no es una prueba de extremo a extremo.
 
 **¿Cómo sabes que las pruebas valen para algo?**
-Hay dos comprobaciones. La batería ejecutada contra exportaciones anteriores: 47 de las 83 pruebas originales fallaban contra la v1.0 y 128 de las 241 actuales fallan contra la v1.1, así que detectan lo que se corrigió. Y una comprobación por mutaciones que rompe el workflow de 30 maneras (por ejemplo, volver al formato de celda que evalúa fórmulas, convertir el nodo de borrador en uno de envío, hacer que gane la última reserva en vez de la primera o dejar de guardar un campo extraído) y comprueba que alguna prueba lo detecta. Detecta las 30; y si una mutación no cambia nada, el script lo marca como error, para que una errata no cuente como «detectada».
+Hay dos comprobaciones. La batería ejecutada contra exportaciones anteriores: 47 de las 83 pruebas originales fallaban contra la v1.0 y 131 de las 242 actuales fallan contra la v1.1, así que detectan lo que se corrigió. Y una comprobación por mutaciones que rompe el workflow de 31 maneras (por ejemplo, volver al formato de celda que evalúa fórmulas, convertir el nodo de borrador en uno de envío, hacer que gane la última reserva en vez de la primera o dejar de guardar un campo extraído) y comprueba que alguna prueba lo detecta. Detecta las 31; y si una mutación no cambia nada, el script lo marca como error, para que una errata no cuente como «detectada».
 
 **¿Qué fallo te enseñó más?**
 Tres. El primero: probé con 100 correos y todo salió «bien», pero al leer las filas y los borradores aparecieron tres problemas (una orden oculta subía la prioridad, borradores que afirmaban servicios, la hoja no mostraba qué revisar). Procesar sin errores no es lo mismo que procesar bien. El segundo: en la auditoría vi que un fallo persistente de la IA paraba toda la tanda y podía perder correos. El tercero: al desplegar el código reforzado, mi herramienta alteró mis propias expresiones regulares (secuencias de escape convertidas en caracteres invisibles); solo lo vi porque comparé cada nodo publicado con el repositorio, y desde entonces una prueba lo vigila.
@@ -61,7 +61,7 @@ En este orden: repetir la prueba de 100 correos reales en la versión final (la 
 
 - Que ahorra tiempo o dinero (no está medido).
 - Que es «seguro», «a prueba de fallos» o «listo para producción».
-- Que las 241 pruebas son «de extremo a extremo» o que prueban Gmail, Sheets o Groq.
+- Que las 242 pruebas son «de extremo a extremo» o que prueban Gmail, Sheets o Groq.
 - Que se ha usado con clientes o con datos reales.
 - Que la inyección de instrucciones está resuelta, o que la reserva elimina todo riesgo de duplicados.
 

@@ -43,6 +43,7 @@ const mutations = {
   // privacy
   'successful runs store their data again': (w) => { w.settings.saveDataSuccessExecution = 'all'; },
   'the error log no longer masks e-mail addresses': (w, e) => { N(e, 'Append row in sheet').parameters.columns.value.mensaje = '={{ $json.execution.error.message }}'; },
+  'the sender address is sent to the model again': (w) => { const n = N(w, 'Preparar petición IA'); n.parameters.jsCode = n.parameters.jsCode.replace("'De: ' + plano(Nombre) + '\\n' +", "'De: ' + plano(Nombre) + ' <' + plano(Email) + '>\\n' +"); },
   'manual runs of the error workflow are stored again': (w, e) => { e.settings.saveManualExecutions = true; },
 };
 let missed = 0;

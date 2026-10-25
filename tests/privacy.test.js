@@ -75,6 +75,18 @@ test('end to end: card numbers, IBANs and ID numbers reach neither the model nor
   assert.equal(w.sheet.rows[0].human_review_required, 'sí', 'payment data forces human review');
 });
 
+test('data minimisation: the sender\'s address never goes to the model, yet the draft is still addressed to it', () => {
+  const w = createWorld({ groq: () => groqOk(aiResponse()) });
+  run(w, [gmailMessage({ id: 'priv-002' })]);
+  assert.equal(w.groqCalls.length, 1);
+  const sent = JSON.stringify(w.groqCalls);
+  assert.ok(!sent.includes('ana.prueba@example.com'), 'the address was sent to the AI provider');
+  assert.ok(!/@/.test(w.groqCalls[0].messages[1].content), 'no e-mail address at all in the model-bound text');
+  assert.ok(sent.includes('Ana Prueba'), 'the name is still sent: it is needed for the greeting and for customer_name');
+  assert.equal(w.drafts.length, 1);
+  assert.equal(w.drafts[0].to, 'ana.prueba@example.com');
+});
+
 test('the claim log (shared "bloqueos" tab) stores identifiers and times only, never e-mail content', () => {
   const w = createWorld({ groq: () => groqOk(aiResponse()) });
   run(w, [emails.quoteComplete()]);

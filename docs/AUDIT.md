@@ -175,7 +175,7 @@ Read the failures as a map of what changed, not as a count of bugs: some tests e
 
 At the end of the first round (v1.1) the suite had 83 tests (13 workflow integrity, 38 Code-node, 28 scenario, 4 load) and all passed, and the mutation check broke eleven things one at a time.
 
-**Second round.** The suite now has 241 tests (18 integrity, 38 Code-node, 28 scenario, 4 load, 27 concurrency, 119 adversarial, 7 privacy) and all pass. Pointed at the v1.1 export it gives **113 passed and 128 failed**; the new files account for most of it: the adversarial file passes 27 of 119 on v1.1 (the passing ones are the honest-email guards and basic shape checks), the concurrency file 2 of 27, the privacy file 3 of 7. The mutation check now breaks thirty things one at a time (the original eleven, ten for the lock, five for the hostile-input hardening, one for the extracted fields, three for privacy) and every one is caught. It also refuses a mutation that changes nothing, so a typo in the script cannot pass as "detected".
+**Second round.** The suite now has 242 tests (18 integrity, 38 Code-node, 28 scenario, 4 load, 27 concurrency, 119 adversarial, 8 privacy) and all pass. Pointed at the v1.1 export it gives **111 passed and 131 failed**; the new files account for most of it: the adversarial file passes 27 of 119 on v1.1 (the passing ones are the honest-email guards and basic shape checks), the concurrency file 2 of 27, the privacy file 3 of 8. The mutation check now breaks thirty-one things one at a time (the original eleven, ten for the lock, five for the hostile-input hardening, one for the extracted fields, four for privacy) and every one is caught. It also refuses a mutation that changes nothing, so a typo in the script cannot pass as "detected".
 
 ## Not verified
 
@@ -229,7 +229,9 @@ Design points that matter: the log is **append-only** (no row is edited, so ther
 - The error log (`errores` tab) masks e-mail addresses in the error message and caps it at 300 characters; it never contains email fields.
 - The claim log holds identifiers and times only. No Code node writes to the console.
 
-**Evidence.** *Live:* execution #114 (a production run of the published workflow) is not stored: n8n answers "not found" when asked for it, while the sheet row and the draft exist. *Static and Sim:* `tests/privacy.test.js` (7 tests; four fail on the v1.1 export) and three mutations.
+**Evidence.** *Live:* execution #114 (a production run of the published workflow) is not stored: n8n answers "not found" when asked for it, while the sheet row and the draft exist. *Static and Sim:* `tests/privacy.test.js` (8 tests; five fail on the v1.1 export) and four mutations.
+
+**Addendum: what the AI provider receives.** The model-bound text used to include the sender's e-mail address. It is not needed to classify, extract or write the reply, so since this pass only the sender's name, the subject and the cleaned message are sent; the draft is still addressed through the flow's own `Email` field. *Live:* execution #115 (draft version, manual) produced the row, the five customer fields and a draft addressed to the form's address, with a greeting that uses the name. *Sim:* a privacy test asserts that no `@` reaches the model-bound text, and a mutation puts the address back. Residual: names, phone numbers and any personal detail written in the message are still sent to the provider; masking covers cards, IBANs and ID numbers only.
 
 **Not applied, because it needs access to the n8n instance or a plan this one does not have.** See the list in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md): retention and pruning of stored executions, who can open or reveal executions, n8n's execution-data redaction (documented by n8n as an Enterprise feature; no setting for it is exposed by the interface used for this review), and the `availableInMCP` flag. Executions stored *before* this change still hold fictional test data and were not deleted.
 
@@ -262,4 +264,3 @@ Removed from the workflow and the export. The integrity test now requires that e
 ### B-07 Invisible characters in deployed code (Low, found while deploying)
 
 When the hardened Code nodes were deployed, the transport layer turned the `\uXXXX` escapes written inside regular expressions into the real characters, some of them invisible and two of them line separators. I found it because I compared every Code node of the live workflow with the repository, node by node, and two differed. Nothing ran in that state (it was a draft). The fix writes those characters in the `\u{XXXX}` form with the `u` flag, which survives, and `tests/workflow-integrity.test.js` now fails if any Code node contains an invisible, control or line-separator character. The check was verified to catch the faulty version. After the fix the comparison with the live workflow shows zero differences.
-

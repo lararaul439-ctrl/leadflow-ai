@@ -54,7 +54,7 @@ test('S01 valid commercial e-mail: one row, one draft, nothing sent', () => {
   const body = w.groqCalls[0];
   assert.equal(body.model, 'openai/gpt-oss-120b');
   assert.equal(body.messages[0].role, 'system');
-  assert.match(body.messages[1].content, /^Analiza el siguiente correo\.\n\n<correo>\nDe: Ana Prueba <ana\.prueba@example\.com>/);
+  assert.match(body.messages[1].content, /^Analiza el siguiente correo\.\n\n<correo>\nDe: Ana Prueba\n/);
   assert.equal(body.response_format.json_schema.schema.additionalProperties, false);
   assert.deepEqual(s.ran, [
     'Gmail Trigger', 'Normalizar correo', 'Procesar de uno en uno', 'Preparar petición IA',

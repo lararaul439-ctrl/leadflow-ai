@@ -17,10 +17,10 @@ The report separates two kinds of evidence, and they should not be merged:
 | markdownlint (structure rules, line length and similar style rules off) | Clean after removing blank lines at the end of one file |
 | GitHub Actions (`.github/workflows/ci.yml`) on the pull request, commit `8a465df` | Tests and lint on Node 20 and Node 22, and the mutation check: all three jobs succeeded. This is the same simulated suite on a clean machine, not a test of the real services |
 | Same suite against the v1.1 export | 111 passed, 131 failed (the new files fail there by design, see [AUDIT.md](AUDIT.md)) |
-| Real executions on v1.2 | #110 to #115 (below), all as expected |
-| Real executions of the lock | #108 and #109 (one draft where two runs used to give two) |
+| Real executions on v1.2 | #110 to #115, #118 and #119 (below), all as expected |
+| Real executions of the lock | #108 and #109 at the build that introduced it, and #118 and #119 on the final published build (one draft where two runs used to give two) |
 | Scenarios that exist **only** as simulation | Sheets outage, Gmail draft failure, AI timeout, crash while holding a claim, claim expiry, huge email, 100-email batch, every adversarial case except the one in #110 |
-| Not run | Repeat of the 100-real-email test, a real timeout, a real Sheets or Gmail outage, the Gmail Trigger in production, real concurrency on the final build |
+| Not run | Repeat of the 100-real-email test, a real timeout, a real Sheets or Gmail outage, the Gmail Trigger in production |
 
 ## How to run
 
@@ -50,7 +50,7 @@ For each scenario: the automated test that covers it (simulated) and the real ev
 | 11 | AI API error | S11 | T11 (real 429, v1.0); #101 (provoked 404, v1.1) | Pass |
 | 12 | AI timeout | S12 | None. The 30 s timeout is configured and checked by the integrity test, but no real timeout was provoked | Pass (simulated) |
 | 13 | Duplicate email | S13 | T09 | Pass |
-| 14 | Two simultaneous executions | S14, `concurrency.test.js` (C01 to C17) | #104 to #107: two drafts each (before the lock); #108 and #109: one draft (with the lock) | Pass (v1.2). Residual cases in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) |
+| 14 | Two simultaneous executions | S14, `concurrency.test.js` (C01 to C17) | #104 to #107: two drafts each (before the lock); #108 and #109: one draft (with the lock); #118 and #119: one draft on the final published build | Pass (v1.2). Residual cases in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) |
 | 15 | Google Sheets failure | S15, S15b | None | Pass (simulated): execution stops, error logged, no draft, lookups retried 3 times |
 | 16 | Gmail draft failure | S16 | None | Pass (simulated): row exists, error logged, a retry creates the draft without duplicating |
 | 17 | Malicious instructions in the email | S17, S17b, `adversarial.test.js` (119 cases) | T04, T16, #110 | Pass. Prompt injection is mitigated, not eliminated |
@@ -103,7 +103,7 @@ All on the live n8n Cloud workflow, manual execution, fictional data, no email s
 
 ## Real executions on v1.2
 
-Fictional data, no email sent. Executions #104 to #113 are manual runs of the draft version that was then published (the draft was compared node by node with the repository before and after: zero differences). Execution #114 is a production run of the published version. Execution #115 is a manual run of the draft that removed the sender address from the model-bound text, published afterwards (the draft was compared node by node with the repository: zero differences). Gmail drafts and test rows were left in place and can be deleted.
+Fictional data, no email sent. Executions #104 to #113 are manual runs of the draft version that was then published (the draft was compared node by node with the repository before and after: zero differences). Execution #114 is a production run of the published version. Execution #115 is a manual run of the draft that removed the sender address from the model-bound text, published afterwards (the draft was compared node by node with the repository: zero differences). Executions #118 and #119 were run at the end of the final review round on the published version (workflow version `72c9ea6c`, identical to this repository); the test row and the claim log were cleared afterwards. Gmail drafts and test rows were left in place and can be deleted.
 
 | Execution | What was done | Observed |
 |---|---|---|
@@ -116,6 +116,7 @@ Fictional data, no email sent. Executions #104 to #113 are manual runs of the dr
 | #113 | `Reintentar fallidos` after restoring the endpoint | The `error_ia` row was reprocessed in place (no new row); one draft; claim released |
 | #114 | **Production** run of the published workflow (form entry with the standard example IBAN) | IBAN stored as `[IBAN oculto]` and flagged; the five new columns filled; one draft; the execution is **not stored** (n8n answers "not found"), as configured |
 | #115 | Form entry (fictional name, address and a quote request) after the sender address was removed from the model-bound text | Row complete with the five customer fields; one draft addressed to the form's address, greeting by name; read through the sheet and Gmail only (manual runs are not stored either) |
+| #118 / #119 | **Final published build.** A fictional row in status `error_ia` retried by two simultaneous manual runs of `Reintentar fallidos`, so both rebuilt the same `request_id`. Read through the sheet and Gmail only (manual runs are not stored) | One draft and one row (updated in place to `incompleta`). The `bloqueos` tab showed two claims 3 ms apart and two releases: the second run released about two seconds after claiming, well before the first finished (draft created about four seconds after the claims, release about five seconds after). Whether the second run skipped the model call cannot be read back, because manual runs leave no data; one draft and the early release are what was observed |
 
 Executions #110 to #113 were read with their full data before the privacy settings were applied; after that, successful runs leave no data to read, which is why #114 and #115 are verified through the sheet and Gmail only.
 
@@ -138,7 +139,8 @@ Second round:
 ## Not tested, and why
 
 - **A real AI timeout, Sheets outage or Gmail outage.** They cannot be provoked safely on a shared service; they are simulated only. The behaviour they exercise (continue on error, retries, error workflow) is real n8n configuration, but it has not been observed firing for these causes.
-- **Concurrency on the final build.** The lock was observed on the real services at the build that introduced it (#108 and #109). The lock nodes are unchanged since (the comparison with the repository shows identical code), but the later changes were not re-run under concurrency. A crash while holding a claim and the expiry of a claim are simulated only.
+- **A crash while holding a claim, and the expiry of a claim.** Simulated only. Concurrency itself was observed on the real services at the build that introduced the lock (#108 and #109) and again on the final published build (#118 and #119).
+- **The 100-email load test on the final build.** Prepared, not run: `npm run load-emails` prints the 100 fictional emails (fixed seed) and the scripted version runs on the simulation. A real run leaves 100 drafts and 100 rows in the test mailbox and sheet and uses about 600 Sheets calls and 100 model calls on free tiers, so it should be run deliberately, in a throwaway mailbox with the sender filter set. Afterwards count rows, drafts and duplicates.
 - **Execution-data redaction, retention and access control of n8n.** These are instance settings. The workflow-level retention settings were applied and verified (#114); the rest is on the owner list in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 - **Hostile HTML in real Gmail messages.** The hidden-text handling is verified in the simulation. No real email was sent to the test mailbox in this round.
 - **The Gmail Trigger with a real stream of emails (v1.1 and v1.2).** The real runs started from the test form and from the manual retry entry. The Gmail path shares every node after the trigger and normalisation, but no emails were sent to exercise the trigger itself.

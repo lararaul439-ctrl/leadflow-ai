@@ -156,9 +156,19 @@ Las pruebas ejecutan el workflow exportado y el código real de los nodos de có
 ### Resultados
 
 - **Automáticas:** 242 pruebas (18 de integridad del workflow, 38 de los nodos de código, 28 escenarios del workflow completo, 4 de carga, 27 de concurrencia, 119 adversariales, 8 de privacidad). Todas pasan. La misma batería falla 131 pruebas contra la exportación v1.1, que es como la segunda ronda de revisión encontró lo que había que corregir. La comprobación por mutaciones rompe 31 cosas una a una y todas se detectan. ESLint no da errores ni avisos sobre las pruebas y sobre los nodos de código extraídos, y un workflow de GitHub Actions (`.github/workflows/ci.yml`) ejecuta las pruebas, el lint y la comprobación por mutaciones en cada pull request.
-- **Ejecuciones reales:** 16 casos manuales sobre los servicios reales (detalle en [docs/casos-de-prueba.md](docs/casos-de-prueba.md), con los fallos y sus correcciones), cinco ejecuciones reales de la v1.1 para la primera auditoría y once para la v1.2 (de la #104 a la #114: la carrera de borradores duplicados antes y después de la reserva, un correo hostil, uno honesto, un fallo de la IA y su reintento, y una ejecución de producción del workflow publicado).
+- **Ejecuciones reales:** 16 casos manuales sobre los servicios reales (detalle en [docs/casos-de-prueba.md](docs/casos-de-prueba.md), con los fallos y sus correcciones), cinco ejecuciones reales de la v1.1 para la primera auditoría y catorce para la v1.2 (de la #104 a la #115, más la #118 y la #119: la carrera de borradores duplicados antes y después de la reserva, y otra vez sobre la versión final publicada, un correo hostil, uno honesto, un fallo de la IA y su reintento, y una ejecución de producción del workflow publicado).
 - **Carga:** 100 correos ficticios enviados seguidos al workflow real (v1.0): 100 filas y 100 borradores, sin duplicados, sin ningún borrador enviado, en unos 10 minutos. Ahora hay una versión con guion y repetible sobre la simulación. La prueba real no se ha repetido desde que se añadió la reserva (la reserva cuesta unas seis llamadas a Sheets por correo, ver las limitaciones).
 - **Medición:** tres correos procesados en una misma tanda tardaron entre 15 y 17 segundos en total, unos 5 o 6 segundos por correo. No se han medido ahorros de tiempo ni de dinero y no se afirma ninguno.
+
+### Qué está verificado y cómo
+
+| Nivel | Qué cubre |
+|---|---|
+| **Implementado y cubierto por pruebas automáticas** (simulación) | Limpieza y enmascarado, reglas de validación y plantilla segura, estados y avisos de revisión, búsqueda de duplicados, la reserva, la ruta de reintento, el registro de errores y la ausencia de cualquier nodo de envío. 242 pruebas y una comprobación de 31 mutaciones sobre una simulación de n8n, Groq, Sheets y Gmail, y de nuevo en la CI con Node 20 y 22. |
+| **Verificado en los servicios reales** (datos ficticios, buzón de pruebas) | 16 casos manuales, 14 ejecuciones de la v1.2 y 5 de la v1.1: la carrera de borradores duplicados antes y después de la reserva y otra vez sobre la versión final, un correo hostil, uno honesto, un fallo de la IA y su reintento, y una ejecución de producción. Detalle en [docs/TEST_REPORT.md](docs/TEST_REPORT.md) (en inglés). |
+| **Solo simulado** | Caídas de Sheets, Gmail o del proveedor de IA, un timeout real de la IA, un fallo mientras se mantiene una reserva, la caducidad de una reserva, el lote de 100 correos y el tratamiento del HTML de correos reales de Gmail. |
+| **Pendiente** | La prueba de carga de 100 correos sobre la versión final (`npm run load-emails` imprime los correos), el Gmail Trigger con un flujo real de correo, capturas reales y una grabación, una medición de la calidad de la clasificación con datos etiquetados, y cualquier uso en el buzón de una empresa o con datos reales de clientes. |
+| **Requiere a una persona** | Un contrato de encargado del tratamiento y una revisión de protección de datos, los ajustes de la instancia de n8n (retención, acceso, redacción), el filtro de remitente y las credenciales, y leer cada borrador antes de enviar nada. |
 
 ## Estado y límites
 

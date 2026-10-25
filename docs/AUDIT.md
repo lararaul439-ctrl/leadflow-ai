@@ -182,7 +182,7 @@ At the end of the first round (v1.1) the suite had 83 tests (13 workflow integri
 What was **not** observed:
 
 - A real timeout of the AI call, and a real outage of Google Sheets or Gmail. These are simulated only.
-- Concurrency on the **final** v1.2 build. The lock was observed on real services at the build that introduced it (executions #108 and #109); the lock nodes have not changed since, but the later changes were not re-run under concurrency.
+- A crash while a run holds its claim, and the expiry of a claim: simulated only. Concurrency on the **final** v1.2 build was re-run on the real services after this audit was written (executions #118 and #119: one draft); see [TEST_REPORT.md](TEST_REPORT.md).
 - The Gmail Trigger in production against a real, busy mailbox. The load test with 100 real emails (T15) ran on v1.0 and was not repeated on v1.1 or v1.2; the real executions cited here are single emails. The HTML-to-text step in `Normalizar correo` runs only on Gmail emails, so its hardening (hidden text, bounded parsing) is verified by the simulation and not on real Gmail messages.
 - How n8n Cloud behaves when the manual trigger `Reintentar fallidos` is pressed from the interface by a person (it was run through the API).
 - The behaviour of the free tier of the model provider with real data. It should not be used with real customer data.

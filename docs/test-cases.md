@@ -18,7 +18,7 @@ T01 to T16 were run on the real services while the workflow was at **v1.0** (wit
 - **Duplicate drafts (T09).** In v1.2 the case "two simultaneous runs of the same email" is closed with a claim lock; see T17 and T18 below.
 - **Hostile emails (T04, T16).** v1.2 replaces a risky draft with a fixed holding reply and checks figures against the email; see T19.
 
-What was re-run on the real services for v1.1 (executions #99 to #103) and v1.2 (#104 to #114), and what each automated test covers, is in [TEST_REPORT.md](TEST_REPORT.md). The review rounds are in [AUDIT.md](AUDIT.md).
+What was re-run on the real services for v1.1 (executions #99 to #103) and v1.2 (#104 to #115, #118 and #119), and what each automated test covers, is in [TEST_REPORT.md](TEST_REPORT.md). The review rounds are in [AUDIT.md](AUDIT.md).
 
 ## Summary
 

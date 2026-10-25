@@ -18,7 +18,7 @@ T01 a T16 se ejecutaron sobre los servicios reales con el workflow en la **v1.0*
 - **Borradores duplicados (T09).** En la v1.2 el caso «dos ejecuciones simultáneas del mismo correo» se cierra con una reserva; ver T17 y T18 más abajo.
 - **Correos hostiles (T04, T16).** La v1.2 sustituye un borrador con riesgo por una respuesta de cortesía fija y comprueba las cifras contra el correo; ver T19.
 
-Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #103) y la v1.2 (#104 a #114), y lo que cubre cada prueba automática, está en [TEST_REPORT.md](TEST_REPORT.md) (en inglés). Las rondas de revisión están en [AUDIT.md](AUDIT.md) (en inglés).
+Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #103) y la v1.2 (#104 a #115, #118 y #119), y lo que cubre cada prueba automática, está en [TEST_REPORT.md](TEST_REPORT.md) (en inglés). Las rondas de revisión están en [AUDIT.md](AUDIT.md) (en inglés).
 
 ## Resumen
 

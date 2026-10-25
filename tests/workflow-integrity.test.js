@@ -9,9 +9,6 @@ const main = loadWorkflow('workflows/leadflow-ai.json');
 const errors = loadWorkflow('workflows/leadflow-errores.json');
 const files = ['workflows/leadflow-ai.json', 'workflows/leadflow-errores.json'];
 
-// The Gemini node is kept on the canvas on purpose, disconnected (see docs/architecture.md).
-const KNOWN_DISCONNECTED = new Set(['Analizar con IA']);
-
 const targets = (wf, name) =>
   ((wf.connections[name] && wf.connections[name].main) || []).flatMap((out) => out.map((c) => c.node));
 
@@ -32,14 +29,14 @@ test('every connection points to nodes that exist', () => {
   }
 });
 
-test('every node is reachable from a trigger, except the documented disconnected Gemini node', () => {
+test('every node is reachable from a trigger (no orphan nodes, no leftover provider node)', () => {
   const triggers = main.nodes.filter((n) => /trigger/i.test(n.type)).map((n) => n.name);
   assert.deepEqual(triggers.sort(), ['Gmail Trigger', 'On form submission', 'Reintentar fallidos'].sort());
   const seen = new Set(triggers);
   const stack = [...triggers];
   while (stack.length) for (const t of targets(main, stack.pop())) if (!seen.has(t)) { seen.add(t); stack.push(t); }
   const unreachable = main.nodes.map((n) => n.name).filter((n) => !seen.has(n));
-  assert.deepEqual(unreachable, [...KNOWN_DISCONNECTED]);
+  assert.deepEqual(unreachable, []);
 });
 
 test('no path inside the loop dead-ends: every email path returns to "Procesar de uno en uno" (nothing is silently dropped)', () => {
@@ -110,7 +107,7 @@ test('placeholders are present, the workflow is exported inactive and carries no
 test('every Code node compiles', () => {
   for (const wf of [main, errors]) {
     for (const n of wf.nodes.filter((x) => x.type === 'n8n-nodes-base.code')) {
-      assert.doesNotThrow(() => vm.compileFunction(n.parameters.jsCode, ['$input', '$']), `${n.name} does not compile`);
+      assert.doesNotThrow(() => vm.compileFunction(n.parameters.jsCode, ['$input', '$', '$now', '$execution']), `${n.name} does not compile`);
     }
   }
 });
@@ -137,6 +134,7 @@ test('the write is an upsert keyed by request_id (a repeated write cannot duplic
   assert.deepEqual(Object.keys(w.columns.value), [
     'request_id', 'received_at', 'sender_name', 'sender_email', 'subject', 'body',
     'status', 'category', 'priority', 'summary', 'human_review_required', 'validation_flags',
+    'customer_name', 'company', 'requested_service', 'quantity', 'missing_information',
   ]);
 });
 
@@ -150,4 +148,82 @@ test('the system prompt tells the model that the e-mail is untrusted data', () =
 test('the error workflow logs the node, the message and the execution link', () => {
   const cols = getNode(errors, 'Append row in sheet').parameters.columns.value;
   assert.deepEqual(Object.keys(cols), ['fecha', 'flujo', 'nodo', 'mensaje', 'url_ejecucion']);
+});
+
+// ---------------------------------------------------------------- the claim lock (see docs/architecture.md)
+test('lock: the model, the duplicate lookup, the sheet write and the draft can only be reached through the claim gate', () => {
+  const entry = main.connections['Procesar de uno en uno'].main[1].map((c) => c.node);
+  const seen = new Set();
+  const stack = [...entry];
+  while (stack.length) {
+    const n = stack.pop();
+    if (seen.has(n) || n === 'Procesar de uno en uno') continue;
+    seen.add(n);
+    const outs = (main.connections[n] && main.connections[n].main) || [];
+    outs.forEach((o, i) => {
+      for (const c of o) {
+        if (n === '¿Gana la reserva?' && i === 0) continue; // the "won" edge is the only way past the gate
+        stack.push(c.node);
+      }
+    });
+  }
+  for (const guarded of ['Buscar duplicado', 'Analizar con IA (Groq)', 'Append or update row in sheet', 'Create a draft']) {
+    assert.ok(!seen.has(guarded), `${guarded} can be reached without winning the claim`);
+  }
+  assert.deepEqual(targets(main, '¿Gana la reserva?').sort(), ['Buscar duplicado', 'Reserva perdida']);
+  assert.deepEqual(main.connections['¿Gana la reserva?'].main[0].map((c) => c.node), ['Buscar duplicado']);
+});
+
+test('lock: every way out of an e-mail releases its claim before the loop continues', () => {
+  const loop = 'Procesar de uno en uno';
+  const sources = Object.entries(main.connections)
+    .filter(([, c]) => c.main.some((o) => o.some((x) => x.node === loop)))
+    .map(([src]) => src)
+    .sort();
+  assert.deepEqual(sources, ['Edit Fields', 'Liberar reserva', 'Normalizar correo', 'Preparar reintento'].sort());
+  const into = Object.entries(main.connections)
+    .filter(([, c]) => c.main.some((o) => o.some((x) => x.node === 'Liberar reserva')))
+    .map(([src]) => src)
+    .sort();
+  assert.deepEqual(into, ['Create a draft', 'Duplicado ignorado', 'Reserva perdida', '¿Crear borrador?'].sort());
+});
+
+test('lock: claims and releases are single-call appends of plain text, retried, and the read never returns nothing silently', () => {
+  for (const name of ['Crear reserva', 'Liberar reserva']) {
+    const n = getNode(main, name);
+    assert.equal(n.parameters.operation, 'append', name);
+    assert.equal(n.parameters.sheetName.cachedResultName, 'bloqueos', name);
+    assert.equal(n.parameters.options.useAppend, true, `${name}: without useAppend two simultaneous appends can land on the same row`);
+    assert.equal(n.parameters.options.cellFormat, 'RAW', name);
+    assert.equal(n.retryOnFail, true, name);
+    assert.deepEqual(Object.keys(n.parameters.columns.value), ['request_id', 'claim_id', 'event', 'at'], name);
+  }
+  assert.equal(getNode(main, 'Crear reserva').parameters.columns.value.event, 'claim');
+  assert.equal(getNode(main, 'Liberar reserva').parameters.columns.value.event, 'release');
+  const read = getNode(main, 'Leer reservas');
+  assert.equal(read.alwaysOutputData, true, 'an empty read must reach Decidir reserva, which stops the run loudly');
+  assert.equal(read.parameters.filtersUI.values[0].lookupColumn, 'request_id');
+  assert.equal(read.parameters.sheetName.cachedResultName, 'bloqueos');
+});
+
+test('every field the workflow extracts is stored in the sheet (no extracted data is silently dropped)', () => {
+  const append = getNode(main, 'Append or update row in sheet');
+  const mapped = Object.keys(append.parameters.columns.value);
+  const schema = append.parameters.columns.schema.map((c) => c.id);
+  assert.deepEqual(schema.sort(), [...mapped].sort(), 'the schema and the mapping must list the same columns');
+  for (const col of ['customer_name', 'company', 'requested_service', 'quantity', 'missing_information']) {
+    assert.ok(mapped.includes(col), `extracted field not stored in the sheet: ${col}`);
+  }
+  assert.equal(append.parameters.options.cellFormat, 'RAW');
+  assert.deepEqual(append.parameters.columns.matchingColumns, ['request_id']);
+});
+
+test('code nodes contain no hidden characters (invisible, control or line-separator characters must be written as escapes)', () => {
+  // Raw invisible characters in a regex or string are impossible to review and U+2028/2029 can break a regex literal.
+  for (const wf of [main, errors]) {
+    for (const n of wf.nodes.filter((x) => x.type.endsWith('.code'))) {
+      const bad = [...n.parameters.jsCode].filter((c) => /[\p{Cf}\p{Zl}\p{Zp}\p{Co}\p{Cs}]/u.test(c) || (/\p{Cc}/u.test(c) && !'\n\t\r'.includes(c)));
+      assert.deepEqual(bad.map((c) => 'U+' + c.codePointAt(0).toString(16).toUpperCase()), [], `hidden characters in ${n.name}`);
+    }
+  }
 });

@@ -17,24 +17,39 @@ class NodeError extends Error {
 }
 
 // ---------- in-memory world: Groq, Google Sheets, Gmail ----------
-function createWorld({ groq, sheetRows = [], clockStart = Date.UTC(2026, 9, 24, 10, 0, 0) } = {}) {
+function createWorld({ groq, sheetRows = [], claimRows = [], clockStart = Date.UTC(2026, 9, 24, 10, 0, 0) } = {}) {
   let tick = 0;
+  let jump = 0;
   const world = {
     groq: groq || (() => { throw new Error('no groq mock'); }),
     groqCalls: [],
-    sheet: { rows: sheetRows.map(clone), formulaCells: [] },
-    errorSheet: { rows: [] },
+    sheet: { rows: sheetRows.map(clone), formulaCells: [] }, // tab "solicitudes"
+    errorSheet: { rows: [] }, // tab "errores"
+    claimSheet: { rows: claimRows.map(clone) }, // tab "bloqueos" (the shared claims log)
     drafts: [],
     sent: [], // nothing in the workflow can send; any test can assert this stays empty
     // failure injection: (operation, attempt, node) => throws to simulate an outage
     sheetsFailure: null,
     gmailFailure: null,
+    // read hook: (node, rows) => rows, to simulate a read that does not show a row that was just written
+    sheetsReadHook: null,
+    // The clock moves one second per reading, so every read is distinct and ordered; advance() jumps ahead.
     now: () => {
-      const t = clockStart + 1000 * tick++;
-      return { toMillis: () => t, toString: () => new Date(t).toISOString() };
+      const t = clockStart + jump + 1000 * tick++;
+      return { toMillis: () => t, toISO: () => new Date(t).toISOString(), toString: () => new Date(t).toISOString() };
     },
+    advance: (ms) => { jump += ms; },
   };
+  world.tabs = { solicitudes: world.sheet, errores: world.errorSheet, bloqueos: world.claimSheet };
   return world;
+}
+
+// The tab a Google Sheets node points at (the exported nodes carry its name in cachedResultName).
+function tabOf(node, world) {
+  const name = node.parameters.sheetName && node.parameters.sheetName.cachedResultName;
+  const tab = world.tabs[name];
+  if (!tab) throw new NodeError(node.name, `Unknown sheet tab in test engine: ${name}`);
+  return tab;
 }
 
 // ---------- expressions ----------
@@ -90,11 +105,11 @@ const handlers = {
   'n8n-nodes-base.errorTrigger': (_n, { items }) => [items],
   'n8n-nodes-base.noOp': (_n, { items }) => [items],
 
-  'n8n-nodes-base.code': (node, { items, state, wf }) => {
+  'n8n-nodes-base.code': (node, { items, state, wf, world }) => {
     const refs = {};
     for (const [k, v] of Object.entries(state.outputs)) refs[k] = v;
     try {
-      return [runCode(wf, node.name, { items, refs })];
+      return [runCode(wf, node.name, { items, refs, now: world.now(), execution: { id: String(state.id) } })];
     } catch (e) {
       throw new NodeError(node.name, e.message);
     }
@@ -168,29 +183,36 @@ const handlers = {
       const ctx = ctxFor(json);
       const result = withRetries(node, (attempt) => {
         if (world.sheetsFailure) world.sheetsFailure(op, attempt, node);
+        const target = tabOf(node, world);
         if (op === 'read') {
           const filters = ((p.filtersUI && p.filtersUI.values) || []).map((f) => ({
             col: f.lookupColumn,
             val: String(evalParam(f.lookupValue, ctx)),
           }));
           const combine = p.combineFilters || 'AND';
-          const rows = world.sheet.rows.filter((r) => {
-            if (filters.length === 0) return true;
-            const m = filters.map((f) => String(r[f.col]) === f.val);
-            return combine === 'OR' ? m.some(Boolean) : m.every(Boolean);
-          });
-          return rows.map(clone);
+          // Like the real node, every returned row carries its row number (the header is row 1).
+          const found = target.rows
+            .map((r, i) => ({ ...clone(r), row_number: i + 2 }))
+            .filter((r) => {
+              if (filters.length === 0) return true;
+              const m = filters.map((f) => String(r[f.col]) === f.val);
+              return combine === 'OR' ? m.some(Boolean) : m.every(Boolean);
+            });
+          return world.sheetsReadHook ? world.sheetsReadHook(node, found) : found;
         }
         if (op === 'appendOrUpdate' || op === 'append') {
           const values = {};
           for (const [k, v] of Object.entries(p.columns.value)) values[k] = evalParam(v, ctx);
           const raw = p.options && p.options.cellFormat === 'RAW';
-          const target = node.parameters.sheetName.cachedResultName === 'errores' ? world.errorSheet : world.sheet;
           if (!raw) {
             for (const [col, v] of Object.entries(values)) {
               if (cellLooksLikeFormula(v)) target.formulaCells = (target.formulaCells || []).concat({ column: col, value: v });
             }
           }
+          // Each Sheets call is atomic in the simulation. In the real node a plain "append" first reads the sheet
+          // to find the last row and then writes, so two simultaneous appends could land on the same row;
+          // "useAppend" makes it a single API call that the server serialises. The lock relies on that,
+          // and the integrity test checks the option is on.
           if (op === 'appendOrUpdate') {
             const keys = p.columns.matchingColumns;
             const idx = target.rows.findIndex((r) => keys.every((k) => String(r[k]) === String(values[k])));
@@ -248,8 +270,10 @@ const handlers = {
 };
 
 // ---------- execution ----------
-function startExecution(wf, world, { start, items }) {
+function startExecution(wf, world, { start, items, id }) {
+  world.executions = (world.executions || 0) + 1;
   return {
+    id: id || world.executions,
     wf,
     world,
     queue: [{ node: start, items: clone(items) }],
@@ -296,8 +320,9 @@ function runToEnd(state) {
 }
 
 // n8n runs the separate error workflow when a production execution fails.
-function runErrorWorkflow(errWf, world, state, executionId = 1) {
+function runErrorWorkflow(errWf, world, state, executionId = state.id) {
   const s = startExecution(errWf, world, {
+    id: `error-of-${state.id}`,
     start: 'Error Trigger',
     items: [{
       workflow: { name: state.wf.name },
@@ -333,4 +358,15 @@ function groqOk(ai) {
   return { choices: [{ message: { content: typeof ai === 'string' ? ai : JSON.stringify(ai) }, finish_reason: 'stop' }] };
 }
 
-module.exports = { createWorld, startExecution, step, runToEnd, execute, retry, runErrorWorkflow, groqOk, NodeError, evalParam };
+// Runs several executions at the same time by taking one node step at a time from whichever execution `pick`
+// chooses (pick(n) returns an index below n). Every step is atomic, like one API call in the real services.
+function interleave(states, pick) {
+  for (let guard = 0; guard < 100000; guard++) {
+    const live = states.filter((s) => !s.error && s.queue.length > 0);
+    if (live.length === 0) return states;
+    step(live[pick(live.length)]);
+  }
+  throw new Error('Interleaving did not finish');
+}
+
+module.exports = { createWorld, startExecution, step, runToEnd, execute, retry, runErrorWorkflow, interleave, groqOk, NodeError, evalParam };

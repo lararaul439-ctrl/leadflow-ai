@@ -1,8 +1,8 @@
 # Automated tests
 
 ```
-npm test                  # 83 tests, under a second, no dependencies, no network
-npm run mutation-check    # breaks the workflow in 11 ways, one at a time; every break must make a test fail
+npm test                  # 241 tests, about 4 seconds, no dependencies, no network
+npm run mutation-check    # breaks the workflow in 30 ways, one at a time (about 2 minutes); every break must make a test fail
 npm run load-emails       # prints the 100 fictional load-test emails as JSON (to send by hand to a TEST mailbox)
 ```
 
@@ -14,14 +14,14 @@ They run **the exported workflow** (`workflows/*.json`) on a small in-memory sim
 
 | Real, taken from the exported files | Simulated |
 |---|---|
-| The graph: nodes and connections | n8n itself (a small engine of about 330 lines in `helpers/engine.js`) |
+| The graph: nodes and connections | n8n itself (a small engine of about 370 lines in `helpers/engine.js`) |
 | The source code of every Code node, run as written | The Groq API (a function that returns what the test needs) |
 | Every expression `={{ ... }}` and every node parameter | Google Sheets (rows in memory) |
 | Node settings: retries, timeout, continue on error | Gmail (drafts in memory; the world has a `sent` list that must stay empty) |
 
 **This is not an end-to-end test.** It cannot tell you that Gmail, Sheets or Groq behave as assumed, or that n8n Cloud has no quirk the engine does not model. The real runs are documented separately, with execution numbers, in [docs/TEST_REPORT.md](../docs/TEST_REPORT.md) and [docs/test-cases.md](../docs/test-cases.md).
 
-What the simulation is good for: the logic that is mine (sanitising, validation, routing, retries, deduplication, what gets written and what does not) can be checked in under a second, repeatedly, with failures that are hard or unwise to provoke for real (a Sheets outage, an AI timeout, two simultaneous runs).
+What the simulation is good for: the logic that is mine (sanitising, validation, routing, retries, deduplication, what gets written and what does not) can be checked in seconds, repeatedly, with failures that are hard or unwise to provoke for real (a Sheets outage, an AI timeout, two simultaneous runs, a hostile email).
 
 ### Assumptions about n8n built into the engine
 
@@ -34,16 +34,21 @@ If one of these is wrong, the tests that depend on it prove less than they appea
 5. **Retrying an execution** resumes from the failed node with the stored data.
 6. **Google Sheets**: with the default cell format the value is interpreted as if typed (so `=...` becomes a formula); with `RAW` it is stored as text. Upsert matches on the configured column.
 7. **Concurrency** is modelled by interleaving the steps of two executions. It shows what the design allows, not what n8n's scheduler does in practice.
+8. **Google Sheets appends are totally ordered** and a read after an append sees every earlier append. The claim lock depends on this. It was observed on the real sheet (executions #108 and #109, see [docs/TEST_REPORT.md](../docs/TEST_REPORT.md)), not proven in general.
+9. **The model is a function.** The adversarial tests decide what the "model" answers (including answers that obey a hostile email), so they test the code around the model, not the model's own resistance.
 
 ## Files
 
 | File | Tests | What it checks |
 |---|---|---|
-| `workflow-integrity.test.js` | 13 | Structure of the two exported workflows: valid connections, no dead ends inside the loop, no node that can send email, no secrets or real IDs, timeouts and retries configured, plain-text writes, upsert key. |
+| `workflow-integrity.test.js` | 18 | Structure of the two exported workflows: valid connections, no unreachable node, no dead ends inside the loop, no node that can send email, no secrets or real IDs, no hidden characters in the code, timeouts and retries configured, plain-text writes, upsert key, every extracted field is stored. |
 | `code-nodes.test.js` | 38 | Each Code node on its own: `Normalizar correo`, `Preparar petición IA`, `Leer respuesta IA`, `Validar respuesta IA`. Includes the shape n8n really produces on an API failure, captured from a real execution. |
 | `scenarios.test.js` | 28 | The whole workflow, one situation per test (S01 to S24): good emails, odd emails, model failures, service failures, duplicates, malicious content, recovery. |
 | `load.test.js` | 4 | 100 fictional emails in one batch, the same 100 again, and 7 failures inside the 100 healed by `Reintentar fallidos`. |
-| `mutation-check.js` | 11 mutations | Not a test: a script that checks the tests would notice a regression. |
+| `concurrency.test.js` | 27 | The claim lock: two executions interleaved at every step boundary, the worst moment, overlapping batches, a crash while holding a claim, claim expiry, a claim that cannot be seen, release on every exit, recovery (C01 to C17, U01 to U10). C12 is a documented limitation. |
+| `adversarial.test.js` | 119 | Hostile and honest emails against the code around the model: orders in Spanish and English, hidden and look-alike characters, hidden HTML, tag break-outs, an obedient "model", invented figures, links, payment talk, tampered recipients. Honest emails (B01 to B14) must **not** be flagged. |
+| `privacy.test.js` | 7 | What n8n is allowed to keep: retention settings, nothing written to the console, masked error messages, card/IBAN/ID numbers reaching neither the model, the sheet, the draft nor any log, and a claim log that holds only identifiers. |
+| `mutation-check.js` | 30 mutations | Not a test: a script that checks the tests would notice a regression. Eleven break the original behaviour, ten the lock, six the hardening and the stored fields, three the privacy settings. A mutation that changes nothing is reported as an error, so a typo cannot pass as "detected". |
 | `fixtures/data.js`, `fixtures/load.js` | | Fictional emails and model answers. All addresses are `example.test` or `example.com`. |
 | `helpers/` | | The engine and the loaders. |
 
@@ -55,6 +60,6 @@ LEADFLOW_DIR=/path/to/folder npm test
 
 The folder must contain `leadflow-ai.json` and `leadflow-errores.json`. This is how the original v1.0 export was run through the suite to see what the fixes changed (see [docs/AUDIT.md](../docs/AUDIT.md)), and how the mutation check works.
 
-## Known gap, on purpose
+## Known limitation, on purpose
 
-`S14` documents a limitation instead of hiding it: two simultaneous executions of the same email produce **one row and two drafts**. The test asserts exactly that. If someone fixes the limitation the test will fail, which is the cue to update the documentation.
+`C12` documents a limitation instead of hiding it: if a run crashes while holding its claim, another run takes over after the claim expires, and the **old** execution is then resumed, it can still create a second draft. The test asserts exactly that. If someone fixes the limitation the test will fail, which is the cue to update [docs/KNOWN_LIMITATIONS.md](../docs/KNOWN_LIMITATIONS.md). (The v1.1 gap this replaces, two simultaneous runs giving two drafts, is closed: `S14` and the concurrency tests assert one draft.)

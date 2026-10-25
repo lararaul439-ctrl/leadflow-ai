@@ -43,6 +43,7 @@ test('S01 valid commercial e-mail: one row, one draft, nothing sent', () => {
       request_id: '18f0a1b2c3d4e5f0', received_at: undefined, sender_name: 'Ana Prueba', sender_email: 'ana.prueba@example.com',
       subject: 'Presupuesto de 100 bolsas con logo', body: emails.quoteComplete().text, status: 'pendiente_revision',
       category: 'presupuesto', priority: 'media', summary: aiResponse().summary, human_review_required: 'no', validation_flags: '',
+      customer_name: 'Ana Prueba', company: 'Taller Ejemplo S.L.', requested_service: 'Bolsas de tela con logo', quantity: '100', missing_information: '',
     },
   );
   assert.equal(w.drafts.length, 1);
@@ -56,9 +57,11 @@ test('S01 valid commercial e-mail: one row, one draft, nothing sent', () => {
   assert.match(body.messages[1].content, /^Analiza el siguiente correo\.\n\n<correo>\nDe: Ana Prueba <ana\.prueba@example\.com>/);
   assert.equal(body.response_format.json_schema.schema.additionalProperties, false);
   assert.deepEqual(s.ran, [
-    'Gmail Trigger', 'Normalizar correo', 'Procesar de uno en uno', 'Preparar petición IA', 'Buscar duplicado', '¿Duplicado?',
+    'Gmail Trigger', 'Normalizar correo', 'Procesar de uno en uno', 'Preparar petición IA',
+    'Preparar reserva', 'Crear reserva', 'Leer reservas', 'Decidir reserva', '¿Gana la reserva?',
+    'Buscar duplicado', '¿Duplicado?',
     'Analizar con IA (Groq)', 'Leer respuesta IA', 'Validar respuesta IA', 'Append or update row in sheet', '¿Crear borrador?',
-    'Create a draft', 'Procesar de uno en uno',
+    'Create a draft', 'Liberar reserva', 'Procesar de uno en uno',
   ]);
 });
 
@@ -206,19 +209,20 @@ test('S13 duplicate e-mail: the second arrival is ignored (no second row, draft 
   assert.ok(!s2.ran.includes('Analizar con IA (Groq)'));
 });
 
-test('S14 (known limitation) two simultaneous runs of the same e-mail: ONE row, but TWO drafts', () => {
+test('S14 two simultaneous runs of the same e-mail: one row, ONE draft (the claim lock; more in concurrency.test.js)', () => {
   const w = world0();
   const a = startExecution(wf, w, { start: 'Gmail Trigger', items: [emails.quoteComplete()] });
   const b = startExecution(wf, w, { start: 'Gmail Trigger', items: [emails.quoteComplete()] });
   const reach = (s, node) => { while (!s.ran.includes(node) && step(s)); };
-  reach(a, '¿Duplicado?'); // both runs look the sheet up before either has written
-  reach(b, '¿Duplicado?');
+  reach(a, 'Leer reservas'); // both runs have claimed before either has read: the worst moment
+  reach(b, 'Crear reserva');
   runToEnd(a);
   runToEnd(b);
   assert.equal(a.error, null);
   assert.equal(b.error, null);
-  assert.equal(w.sheet.rows.length, 1, 'the upsert by request_id protects the sheet');
-  assert.equal(w.drafts.length, 2, 'KNOWN LIMITATION: nothing prevents the second draft (see KNOWN_LIMITATIONS.md)');
+  assert.equal(w.sheet.rows.length, 1);
+  assert.equal(w.drafts.length, 1, 'only the run that holds the claim creates the draft');
+  assert.equal(w.groqCalls.length, 1, 'and only that run calls the model');
   assert.equal(w.sent.length, 0);
 });
 
@@ -240,7 +244,7 @@ test('S15 Google Sheets failure on write: the execution stops, the error workflo
 test('S15b Google Sheets failure on the duplicate lookup is retried 3 times before failing', () => {
   const w = world0();
   let attempts = 0;
-  w.sheetsFailure = (op) => { if (op === 'read') { attempts++; throw new Error('Quota exceeded'); } };
+  w.sheetsFailure = (op, _attempt, node) => { if (node.name === 'Buscar duplicado') { attempts++; throw new Error('Quota exceeded'); } };
   const s = run(w, [emails.quoteComplete()]);
   assert.equal(attempts, 3);
   assert.equal(s.error.node, 'Buscar duplicado');

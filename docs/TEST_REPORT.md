@@ -1,6 +1,6 @@
 # LeadFlow AI test report
 
-What was tested, how, with what result, and what was **not** tested. Version under test: **v1.1**. Test data is fictional throughout. No email was sent at any point.
+What was tested, how, with what result, and what was **not** tested. Version under test: **v1.2** (the second review round; v1.1 results are kept where they still apply). Test data is fictional throughout. No email was sent at any point.
 
 The report separates two kinds of evidence, and I ask the reader not to merge them:
 
@@ -11,12 +11,13 @@ The report separates two kinds of evidence, and I ask the reader not to merge th
 
 | Check | Result |
 |---|---|
-| `npm test` (83 tests: 13 integrity, 38 Code-node, 28 scenario, 4 load) | 83 passed, 0 failed, under 1 second |
-| `npm run mutation-check` (11 deliberate breaks) | 11 of 11 caught |
-| Same suite against the v1.0 export | 36 passed, 47 failed (see [AUDIT.md](AUDIT.md)) |
-| Real executions on v1.1 | #99 to #103 (below), all as expected |
-| Scenarios that exist **only** as simulation | Sheets outage, Gmail draft failure, AI timeout, simultaneous runs, huge email, 100-email batch |
-| Not run | Repeat of the 100-real-email test on v1.1, a real timeout, a real Sheets or Gmail outage, the Gmail Trigger in production on v1.1 |
+| `npm test` (241 tests: 18 integrity, 38 Code-node, 28 scenario, 4 load, 27 concurrency, 119 adversarial, 7 privacy) | 241 passed, 0 failed, about 4 seconds |
+| `npm run mutation-check` (30 deliberate breaks) | 30 of 30 caught |
+| Same suite against the v1.1 export | 113 passed, 128 failed (the new files fail there by design, see [AUDIT.md](AUDIT.md)) |
+| Real executions on v1.2 | #110 to #114 (below), all as expected |
+| Real executions of the lock | #108 and #109 (one draft where two runs used to give two) |
+| Scenarios that exist **only** as simulation | Sheets outage, Gmail draft failure, AI timeout, crash while holding a claim, claim expiry, huge email, 100-email batch, every adversarial case except the one in #110 |
+| Not run | Repeat of the 100-real-email test, a real timeout, a real Sheets or Gmail outage, the Gmail Trigger in production, real concurrency on the final build |
 
 ## How to run
 
@@ -46,15 +47,27 @@ For each scenario: the automated test that covers it (simulated) and the real ev
 | 11 | AI API error | S11 | T11 (real 429, v1.0); #101 (provoked 404, v1.1) | Pass |
 | 12 | AI timeout | S12 | None. The 30 s timeout is configured and checked by the integrity test, but no real timeout was provoked | Pass (simulated) |
 | 13 | Duplicate email | S13 | T09 | Pass |
-| 14 | Two simultaneous executions | S14 | T09 saw duplicated rows on v1.0 before the upsert was introduced | **Known limitation**: one row, two drafts |
+| 14 | Two simultaneous executions | S14, `concurrency.test.js` (C01 to C17) | #104 to #107: two drafts each (before the lock); #108 and #109: one draft (with the lock) | Pass (v1.2). Residual cases in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) |
 | 15 | Google Sheets failure | S15, S15b | None | Pass (simulated): execution stops, error logged, no draft, lookups retried 3 times |
 | 16 | Gmail draft failure | S16 | None | Pass (simulated): row exists, error logged, a retry creates the draft without duplicating |
-| 17 | Malicious instructions in the email | S17, S17b | T04, T16 | Pass. Prompt injection is mitigated, not eliminated |
-| 18 | Unnecessary personal data | S18, S23 | #100 (card, ES IBAN, DNI), #103 (GB and NL IBAN, DNI with hyphen), T08 | Pass |
-| 19 | Recovery after an error | S19a, S19b, S19c | T12; #101 then #102 | Pass |
+| 17 | Malicious instructions in the email | S17, S17b, `adversarial.test.js` (119 cases) | T04, T16, #110 | Pass. Prompt injection is mitigated, not eliminated |
+| 18 | Unnecessary personal data | S18, S23, `privacy.test.js` | #100 (card, ES IBAN, DNI), #103 (GB and NL IBAN, DNI with hyphen), #114 (ES IBAN, published version), T08 | Pass |
+| 19 | Recovery after an error | S19a, S19b, S19c, C14 to C17 | T12; #101 then #102; #112 then #113 | Pass |
 | 20 | Re-execution of a completed process | S20, L2 | #99 (retry entry with nothing to retry) | Pass |
 
-Additional scenarios beyond the twenty: S21 (very large email), S22 (formula injection), S23 (the test form path is sanitised too), S24 (the workflow has no way to send email), and the load scenarios L1 to L3 below.
+Additional scenarios beyond the twenty: S21 (very large email), S22 (formula injection), S23 (the test form path is sanitised too), S24 (the workflow has no way to send email), the load scenarios L1 to L3 below, and the three new files described next.
+
+## What the three new test files cover (all simulated)
+
+Run on the in-memory engine; nothing here proves the real services behave the same way. The assumptions of the engine are listed in [tests/README.md](../tests/README.md).
+
+| File | Tests | What it checks |
+|---|---|---|
+| `concurrency.test.js` | 27 | Two executions of the same email interleaved at **every** step boundary: always one draft, one row, one model call. The worst moment (both claim before either reads). Overlapping batches in opposite order. Different emails never block each other. A crash while holding the claim blocks the email for 10 minutes and no longer. A claim that cannot be seen stops the run with an error. Every way out releases the claim. Recovery by retry. C12 documents a known limitation instead of hiding it. |
+| `adversarial.test.js` | 119 | A01 to A40: orders aimed at the AI in Spanish and English (override, fake system messages, role change, prompt requests, data exfiltration, encoded text). B01 to B14: **honest** emails that must not be flagged. C01 to C10: evasion with invisible, direction-control, look-alike and full-width characters. D01 to D36: risks in the model's draft (prices, promises, invented figures, links, payment talk, internal details). E01 to E07: invalid model answers. F01 to F03: recipient and header tricks. G01 to G05: hidden HTML. H01 to H04: whole batches with a model that obeys every order. |
+| `privacy.test.js` | 7 | Workflow retention settings, no console output, bounded and masked error log, card/IBAN/ID never reach the model, sheet, draft or logs, the claim log holds identifiers only. |
+
+Before/after on the same tests: against the v1.1 export the adversarial file passes 27 of 119, the concurrency file 2 of 27 and the privacy file 3 of 7. The mutation check (30 breaks) shows the tests notice when a protection is removed.
 
 ## Load: the 100-email test
 
@@ -85,6 +98,23 @@ All on the live n8n Cloud workflow, manual execution, fictional data, no email s
 | #102 | `Reintentar fallidos` after restoring the endpoint | The `error_ia` row was reprocessed in place, no new row; a draft created |
 | #103 | Form entry with a GB IBAN, an NL IBAN and a DNI with a hyphen, after widening the masking patterns | All three masked in the sheet; status `incompleta` because the model asked for more details; one draft |
 
+## Real executions on v1.2
+
+Fictional data, no email sent. Executions #104 to #113 are manual runs of the draft version that was then published (the draft was compared node by node with the repository before and after: zero differences). Execution #114 is a production run of the published version. Gmail drafts and test rows were left in place and can be deleted.
+
+| Execution | What was done | Observed |
+|---|---|---|
+| #104 / #105 | Two simultaneous executions over the same request, **before** the lock (build with the v1.1 flow) | Two drafts with the same subject, created about a second apart; one sheet row |
+| #106 / #107 | Same setup, second request | Two drafts again |
+| #108 / #109 | Same setup, **with the lock** | One draft; the second run skipped the model call; the `bloqueos` tab shows two claims and two releases |
+| #110 | Form entry with "ignore the previous instructions", a fake 90% discount, an order confirmation and a request to forward the customer list | The model proposed priority `alta` and a normal reply; the code set `media`, replaced the draft with the safe template, and flagged four patterns; the five new columns were stored; one draft; claim released |
+| #111 | An honest quote request | The model's draft was kept; only "incomplete information" was flagged; one draft |
+| #112 | Same kind of entry with the AI endpoint deliberately wrong in the draft (never published; restored and verified: zero differences) | The call failed after its retries; row saved as `error_ia` with the reason; **no draft**; the claim was released; execution status success |
+| #113 | `Reintentar fallidos` after restoring the endpoint | The `error_ia` row was reprocessed in place (no new row); one draft; claim released |
+| #114 | **Production** run of the published workflow (form entry with the standard example IBAN) | IBAN stored as `[IBAN oculto]` and flagged; the five new columns filled; one draft; the execution is **not stored** (n8n answers "not found"), as configured |
+
+Executions #110 to #113 were read with their full data before the privacy settings were applied; after that, successful runs leave no data to read, which is why #114 is verified through the sheet and Gmail only.
+
 Earlier real tests T01 to T16 (v1.0 and early v1.1 work) are in [test-cases.md](test-cases.md).
 
 ## Problems found while testing, and what I did
@@ -93,12 +123,21 @@ Earlier real tests T01 to T16 (v1.0 and early v1.1 work) are in [test-cases.md](
 2. **A real IBAN pattern gap.** A hostile-input check showed that GB and NL IBANs (letters in the bank code) and DNI numbers written with a hyphen were not masked by my first pattern. I widened the patterns, covered them with tests, published the change and confirmed it in execution #103.
 3. **A wrong assumption about the shape of API errors.** My first reader of failed AI calls looked for the error text in the wrong place. I rebuilt it from the shape n8n really produces on a failed call, captured from a real execution, and the unit test uses that captured shape instead of an invented one.
 4. **A test that must not pass for the wrong reason.** The formula-injection test (S22) contains a control that runs the same input with the unsafe cell format and checks that the test notices it.
+Second round:
+
+5. **The lock was reproduced before it was built.** The duplicate-draft race (A-10) was first reproduced on the real services (#104 to #107), so the fix could be judged against a failure that had actually been seen.
+6. **A mutation that changed nothing.** While adding mutations I found that a typo can make a mutation a no-op and still look "detected". The script now refuses a mutation that does not change the workflow.
+7. **Over-broad rules.** Several first versions of the injection patterns flagged honest emails (for example Spanish "dan", "a partir de ahora", "soy el director", an invoice to forward). The honest-email guards (B01 to B14) caught them; the patterns were narrowed.
+8. **Escapes altered in transit.** Deploying the hardened Code nodes turned `\uXXXX` escapes into raw invisible characters. The node-by-node comparison with the repository found it before anything ran; the code now uses `\u{XXXX}` and an integrity test forbids raw invisible characters in Code nodes (AUDIT B-07).
+9. **A slow parser.** The adversarial test for hidden HTML elements took 4.4 seconds because skipping nested hidden elements was quadratic; it now has a work budget.
 
 ## Not tested, and why
 
 - **A real AI timeout, Sheets outage or Gmail outage.** They cannot be provoked safely on a shared service; they are simulated only. The behaviour they exercise (continue on error, retries, error workflow) is real n8n configuration, but I have not seen it fire for these causes.
-- **Concurrency in n8n Cloud.** Simulated and deduced (AUDIT A-10).
-- **The Gmail Trigger on v1.1 with a real stream of emails.** The v1.1 real runs started from the test form and from the manual retry entry. The Gmail path shares every node after the trigger and normalisation, but I did not send emails to exercise the trigger itself.
+- **Concurrency on the final build.** The lock was observed on the real services at the build that introduced it (#108 and #109). The lock nodes are unchanged since (the comparison with the repository shows identical code), but the later changes were not re-run under concurrency. A crash while holding a claim and the expiry of a claim are simulated only.
+- **Execution-data redaction, retention and access control of n8n.** These are instance settings. The workflow-level retention settings were applied and verified (#114); the rest is on the owner list in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
+- **Hostile HTML in real Gmail messages.** The hidden-text handling is verified in the simulation. No real email was sent to the test mailbox in this round.
+- **The Gmail Trigger with a real stream of emails (v1.1 and v1.2).** The real runs started from the test form and from the manual retry entry. The Gmail path shares every node after the trigger and normalisation, but I did not send emails to exercise the trigger itself.
 - **Pressing `Reintentar fallidos` by hand in the n8n editor.** I executed it through the API.
 - **Real customer data, and any production mailbox.** Out of scope; see the known limitations.
 - **Model quality at scale.** Five or six repeats per case are a trend, not a measurement. No time or money savings were measured and none is claimed.

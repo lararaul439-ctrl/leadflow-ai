@@ -24,6 +24,11 @@ function getNode(wf, name) {
   return node;
 }
 
+// The subset of Luxon's DateTime that the Code nodes use.
+function fakeNow(ms) {
+  return { toMillis: () => ms, toISO: () => new Date(ms).toISOString(), toString: () => new Date(ms).toISOString() };
+}
+
 const clone = (x) => (x === undefined ? undefined : JSON.parse(JSON.stringify(x)));
 
 // Mimics the n8n item API used by the Code nodes: $input.all()/first(),
@@ -39,19 +44,21 @@ function makeItemApi(items) {
 
 // items: array of plain json objects (the input of the node)
 // refs:  { 'Other node name': [json, ...] }  -> available through $('Other node name')
-function runCode(wf, nodeName, { items = [], refs = {} } = {}) {
+// now / execution: stand-ins for n8n's `$now` (a Luxon DateTime) and `$execution`.
+function runCode(wf, nodeName, { items = [], refs = {}, now, execution = { id: '1' } } = {}) {
   const node = getNode(wf, nodeName);
-  const fn = vm.compileFunction(node.parameters.jsCode, ['$input', '$'], {
+  const fn = vm.compileFunction(node.parameters.jsCode, ['$input', '$', '$now', '$execution'], {
     filename: `${nodeName}.js`,
   });
+  const $now = now || fakeNow(Date.now());
   const $input = makeItemApi(items);
   const $ = (name) => {
     if (!(name in refs)) throw new Error(`Node '${name}' has not been executed`);
     return makeItemApi(refs[name]);
   };
-  const out = fn($input, $);
+  const out = fn($input, $, $now, execution);
   // Normalise away cross-realm prototypes so assertions compare plain data.
   return clone(out).map((o) => o.json);
 }
 
-module.exports = { ROOT, workflowPath, loadWorkflow, getNode, runCode, clone };
+module.exports = { ROOT, workflowPath, loadWorkflow, getNode, runCode, clone, fakeNow };

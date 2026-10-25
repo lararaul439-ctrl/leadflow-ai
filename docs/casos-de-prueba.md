@@ -51,7 +51,7 @@ Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #1
 
 ## Casos reales de la v1.2
 
-Ejecutados sobre el workflow publicado con datos ficticios; no se envió ningún correo. Los números de ejecución son los de n8n. T17 es un fallo que provoqué y reproduje a propósito antes de construir la solución.
+Ejecutados sobre el workflow publicado con datos ficticios; no se envió ningún correo. Los números de ejecución son los de n8n. T17 es un fallo provocado y reproducido a propósito antes de construir la solución.
 
 | ID | Escenario | Esperado | Resultado real | Estado |
 |---|---|---|---|---|

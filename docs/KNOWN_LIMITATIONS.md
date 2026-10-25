@@ -63,7 +63,7 @@ These could not be applied from the interface used for the review, or need a pla
 |---|---|---|
 | **Execution retention (pruning)**: how many days and how many executions n8n keeps | It decides how long the email of a *failed* run stays stored | Instance environment settings of n8n (self-hosted) or the plan limits (Cloud) |
 | **Who can open and reveal executions** | Anyone who can open an execution can read the email in it | Project roles and user management |
-| **Execution-data redaction** (per workflow or enforced for the instance) | Would hide the content of stored executions from people without the reveal permission. n8n documents it as an Enterprise feature; I did not verify that it is available on this instance | Workflow menu, Settings; instance Settings, Security |
+| **Execution-data redaction** (per workflow or enforced for the instance) | Would hide the content of stored executions from people without the reveal permission. n8n documents it as an Enterprise feature; it was not verified that it is available on this instance | Workflow menu, Settings; instance Settings, Security |
 | **`availableInMCP`** | Whether the workflow can be reached through n8n's MCP integration | Workflow settings |
 
 ## Not planned in v1.2

@@ -89,12 +89,23 @@ Los números no llegaron al modelo ni a la hoja, y se creó un **borrador** en G
 
 ## Demo
 
-Hay un guion de 2 a 3 minutos en [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Todavía no hay capturas ni grabación publicadas. Se añadirán aquí, en `docs/img/`:
+Las cuatro imágenes de abajo son **reconstrucciones, no capturas de pantalla**. Están dibujadas a partir de los datos de una ejecución real en la instancia de pruebas (correos ficticios, no se envió nada) y del archivo exportado del workflow, y cada una lo dice en su pie. Hay un guion de 2 a 3 minutos en [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Todavía no hay capturas reales ni grabación publicadas. Las imágenes están en inglés.
 
-- `docs/img/inbox-to-sheet.png`: un correo de la bandeja de pruebas y su fila en `solicitudes`.
-- `docs/img/draft.png`: el borrador de Gmail creado para ese correo.
-- `docs/img/workflow-canvas.png`: el lienzo de n8n.
-- `docs/img/demo.mp4` (o un enlace): la grabación del recorrido.
+**Un correo entra, una solicitud queda registrada.** El IBAN y el documento de identidad se ocultan antes del modelo y antes de la hoja.
+
+![Un correo con un IBAN y un documento de identidad a la izquierda, y la fila escrita en la pestaña solicitudes a la derecha, donde ambos números aparecen como etiquetas ocultas](docs/img/inbox-to-sheet.png)
+
+**Solo borradores.** El workflow prepara una respuesta; una persona decide si la envía.
+
+![Dos borradores de Gmail marcados como no enviados: una respuesta redactada por el modelo que pide los datos que faltan, y una respuesta de espera fija](docs/img/draft.png)
+
+**Un correo hostil se trata como dato.** El código lo marca, fija la prioridad, fuerza la revisión humana y cambia el borrador por una respuesta fija.
+
+![Un correo que ordena a la IA ignorar sus instrucciones, y la fila escrita para él con avisos de manipulación y revisión humana en sí](docs/img/prompt-injection.png)
+
+**El workflow**, dibujado a partir de `workflows/leadflow-ai.json`.
+
+![Los 25 nodos del workflow: tres entradas, la reserva, la llamada a la IA, la validación, la fila de la hoja y el borrador de Gmail](docs/img/workflow-canvas.png)
 
 ## Tecnologías
 
@@ -221,6 +232,7 @@ docs/
   DEMO_SCRIPT.md            guion de demo de 2 a 3 minutos
   INTERVIEW_GUIDE.md        recorrido técnico y preguntas
   PORTFOLIO_DESCRIPTION.md  descripciones breves para GitHub, LinkedIn y un CV (inglés y español)
+  img/                      reconstrucciones usadas en este README (ver img/README.md)
 ```
 
 ## Licencia

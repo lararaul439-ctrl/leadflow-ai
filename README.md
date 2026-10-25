@@ -89,12 +89,23 @@ The numbers never reached the model or the sheet, and a Gmail **draft** asking f
 
 ## Demo
 
-A 2 to 3 minute walkthrough is scripted in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Screenshots and a short screen recording are not published yet. They will be added here, under `docs/img/`:
+The four images below are **renderings, not screenshots**. They were drawn from the data of a real run on the test instance (fictitious emails, nothing sent) and from the exported workflow file, and each one says so in its footer. A 2 to 3 minute walkthrough is scripted in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Real screenshots and a screen recording are not published yet.
 
-- `docs/img/inbox-to-sheet.png`: an email in the test inbox and its row in `solicitudes`.
-- `docs/img/draft.png`: the Gmail draft created for it.
-- `docs/img/workflow-canvas.png`: the n8n canvas.
-- `docs/img/demo.mp4` (or a link): the walkthrough recording.
+**One email in, one logged request out.** The IBAN and the ID number are masked before the model and before the sheet.
+
+![An email with an IBAN and an ID number on the left, and the row written to the solicitudes tab on the right, where both numbers appear as masked tags](docs/img/inbox-to-sheet.png)
+
+**Drafts only.** The workflow prepares a reply; a person decides whether to send it.
+
+![Two Gmail drafts marked as not sent: a model-written reply asking for missing details, and a fixed holding reply](docs/img/draft.png)
+
+**A hostile email is treated as data.** The code flags it, fixes the priority, forces human review and swaps the draft for a fixed reply.
+
+![An email that tells the AI to ignore its instructions, and the row written for it with manipulation flags and human review set to yes](docs/img/prompt-injection.png)
+
+**The workflow**, drawn from `workflows/leadflow-ai.json`.
+
+![The 25 nodes of the workflow: three entry points, the claim lock, the AI call, validation, the sheet row and the Gmail draft](docs/img/workflow-canvas.png)
 
 ## Technologies
 
@@ -221,6 +232,7 @@ docs/
   DEMO_SCRIPT.md            2 to 3 minute demo script (Spanish)
   INTERVIEW_GUIDE.md        technical walkthrough and questions (Spanish)
   PORTFOLIO_DESCRIPTION.md  short descriptions for GitHub, LinkedIn and a CV (English and Spanish)
+  img/                      renderings used in this README (see img/README.md)
 ```
 
 ## License

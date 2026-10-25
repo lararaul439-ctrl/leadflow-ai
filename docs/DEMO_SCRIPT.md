@@ -1,6 +1,6 @@
 # Guion de demo (2 a 3 minutos)
 
-Guion para enseñar LeadFlow AI en directo o grabarlo. Todo con datos ficticios y una cuenta de Gmail de pruebas. **No hay grabación ni capturas publicadas todavía**: este guion es para hacerlas. No hace falta decir nada que no se vea o no esté comprobado.
+Guion para enseñar LeadFlow AI en directo o grabarlo. Todo con datos ficticios y una cuenta de Gmail de pruebas. **No hay grabación ni capturas reales publicadas todavía**: el README muestra reconstrucciones dibujadas a partir de una ejecución real, y este guion es para hacer la grabación. No hace falta decir nada que no se vea o no esté comprobado.
 
 ## Antes de empezar (5 minutos de preparación)
 
@@ -50,4 +50,4 @@ Guion para enseñar LeadFlow AI en directo o grabarlo. Todo con datos ficticios 
 
 ## Para grabarlo
 
-Cuando tengas la grabación o las capturas, guárdalas en `docs/img/` con los nombres que cita el README y actualiza esa sección del README. No uses capturas con datos reales ni con direcciones personales.
+Cuando tengas la grabación o capturas reales, guárdalas en `docs/img/` y sustituye en el README las reconstrucciones por ellas (o añádelas al lado). No uses capturas con datos reales ni con direcciones personales.

@@ -97,9 +97,22 @@ This is the row that ended up in the sheet (a real execution, #103 on v1.1, with
 
 The numbers never reached the model or the sheet, and a Gmail **draft** asking for the missing details was created for a person to read. Nothing was sent.
 
+### Real screenshots
+
+Frames from a screen recording of the test environment, made on 25 October 2026 after a real run of three fictional emails through the Gmail Trigger (execution #120, recorded in [docs/real-run-2026-10-25.md](docs/real-run-2026-10-25.md)). The URL bar is blurred. The recording itself is not published here.
+
+| | |
+|---|---|
+| ![The published LeadFlow AI workflow open in the n8n editor](docs/img/real/n8n-workflow.png) | ![The n8n executions tab of the workflow showing no stored executions](docs/img/real/n8n-executions.png) |
+| **n8n:** the published workflow. | **n8n:** successful runs are not stored, on purpose. |
+| ![The solicitudes tab with human review, validation flags, customer, company, service and quantity for the three emails](docs/img/real/sheet-solicitudes.png) | ![The bloqueos tab with one claim and one release per email, all from execution 120](docs/img/real/sheet-bloqueos.png) |
+| **Google Sheets:** review flags and extracted data. | **Google Sheets:** one claim and one release per email. |
+| ![Gmail draft for the quote request asking for the missing details, with no price or date](docs/img/real/gmail-draft-a.png) | ![Gmail draft for the email with instructions aimed at the AI: a fixed holding reply](docs/img/real/gmail-draft-c.png) |
+| **Gmail:** the draft for a quote request asks for what is missing. | **Gmail:** the email that gave orders to the AI gets a fixed holding reply. |
+
 ### Illustrations
 
-The four images below are **renderings, not screenshots**. They were drawn from the data of a real run on the test instance (fictitious emails, nothing sent) and from the exported workflow file, and each one says so in its footer. Real screenshots and a screen recording are not included yet.
+The four images below are **renderings, not screenshots**. They were drawn from the data of a real run on the test instance (fictitious emails, nothing sent) and from the exported workflow file, and each one says so in its footer. Real screenshots are in the section above.
 
 **One email in, one logged request out.** The IBAN and the ID number are masked before the model and before the sheet.
 
@@ -167,7 +180,7 @@ The tests run the exported workflow and the real Code-node source on a **simulat
 | **Implemented and covered by automated tests** (simulation) | Cleaning and masking, validation rules and the safe template, statuses and review flags, duplicate lookup, the claim lock, the retry path, error logging, and the absence of any send node. 242 tests and a 31-mutation check run on a simulation of n8n, Groq, Sheets and Gmail, and again in CI on Node 20 and 22. |
 | **Verified on the real services** (fictional data, test mailbox) | 16 manual cases, 15 executions of v1.2 and 5 of v1.1: the duplicate-draft race before and after the lock and again on the final build, a hostile email, an honest email, an AI failure and its retry, and a production run. Detail in [docs/TEST_REPORT.md](docs/TEST_REPORT.md). |
 | **Simulated only** | Outages of Sheets, Gmail or the AI provider, a real AI timeout, a crash while holding a claim, claim expiry, the 100-email batch, and the HTML handling of real Gmail messages. |
-| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a continuous stream of mail (one batch of three emails has been run), real screenshots and a screen recording, a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
+| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a continuous stream of mail (one batch of three emails has been run), a published screen recording (one has been made, frames from it are above), a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
 | **Needs a person** | A data-processing agreement and data-protection review, the n8n instance settings (retention, access, redaction), the sender filter and credentials, and reading every draft before anything is sent. |
 
 ## Status and limitations
@@ -214,13 +227,13 @@ docs/
   AUDIT.md                  what the review found, fixed and left open
   TEST_REPORT.md            what was tested, real versus simulated
   READINESS.md              senior-style review: what holds up and what blocks real e-mail
-  real-run-2026-10-25.md    text record of one real run through the Gmail Trigger (3 emails, execution #120)
+  real-run-2026-10-25.md    record of one real run through the Gmail Trigger (3 emails, execution #120)
   KNOWN_LIMITATIONS.md      what it does not do
   test-cases.md             16 manual test cases on the real services (English)
   casos-de-prueba.md        the same, in Spanish
   engineering-notes.md      problems found while testing and how they were fixed (English)
   notas-de-ingenieria.md    the same, in Spanish
-  img/                      renderings used in this README (see img/README.md)
+  img/                      renderings and real screenshots used in this README (see img/README.md)
 ```
 
 ## Contact and collaboration

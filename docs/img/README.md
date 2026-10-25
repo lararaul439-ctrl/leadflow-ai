@@ -1,6 +1,6 @@
 # Images
 
-These are renderings, not screenshots. Each one states this in its footer.
+The files in this folder are renderings, not screenshots. Each one states this in its footer. The real screenshots are in [real/](real/).
 
 | File | What it shows | Where the content comes from |
 |---|---|---|
@@ -11,4 +11,15 @@ These are renderings, not screenshots. Each one states this in its footer.
 
 All names, addresses, the IBAN and the ID number are fictitious (the IBAN is a published example, `example.com` addresses are reserved for documentation).
 
-Real screenshots and a screen recording would be added next to these files.
+## Real screenshots (`real/`)
+
+Frames from a screen recording of the test environment made on 2026-10-25, after execution #120 (three fictional emails through the Gmail Trigger). They are unedited apart from the URL bar, which is blurred. No email address appears in them.
+
+| File | What it shows |
+|---|---|
+| `real/n8n-workflow.png` | The published workflow in the n8n editor |
+| `real/n8n-executions.png` | The executions tab of the workflow, empty because successful runs are not stored |
+| `real/sheet-solicitudes.png` | The `solicitudes` tab: human review, validation flags, customer, company, service, quantity |
+| `real/sheet-bloqueos.png` | The `bloqueos` tab: one claim and one release per email, all from execution 120 |
+| `real/gmail-draft-a.png` | The draft for the quote request (case A), opened and closed without changes |
+| `real/gmail-draft-c.png` | The draft for the email with instructions aimed at the AI (case C): a fixed holding reply |

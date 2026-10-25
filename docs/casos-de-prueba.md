@@ -18,7 +18,7 @@ T01 a T16 se ejecutaron sobre los servicios reales con el workflow en la **v1.0*
 - **Borradores duplicados (T09).** En la v1.2 el caso «dos ejecuciones simultáneas del mismo correo» se cierra con una reserva; ver T17 y T18 más abajo.
 - **Correos hostiles (T04, T16).** La v1.2 sustituye un borrador con riesgo por una respuesta de cortesía fija y comprueba las cifras contra el correo; ver T19.
 
-Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #103) y la v1.2 (#104 a #115, #118 y #119), y lo que cubre cada prueba automática, está en [TEST_REPORT.md](TEST_REPORT.md) (en inglés). Las rondas de revisión están en [AUDIT.md](AUDIT.md) (en inglés).
+Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #103) y la v1.2 (#104 a #115 y #118 a #120), y lo que cubre cada prueba automática, está en [TEST_REPORT.md](TEST_REPORT.md) (en inglés). Las rondas de revisión están en [AUDIT.md](AUDIT.md) (en inglés).
 
 ## Resumen
 
@@ -51,7 +51,7 @@ Lo que se repitió sobre los servicios reales para la v1.1 (ejecuciones #99 a #1
 
 ## Casos reales de la v1.2
 
-Ejecutados sobre el workflow publicado con datos ficticios; no se envió ningún correo. Los números de ejecución son los de n8n. T17 es un fallo provocado y reproducido a propósito antes de construir la solución.
+Ejecutados sobre el workflow publicado con datos ficticios; el workflow no envió ningún correo (la T24 partió de tres correos de prueba que el buzón de pruebas se envió a sí mismo). Los números de ejecución son los de n8n. T17 es un fallo provocado y reproducido a propósito antes de construir la solución.
 
 | ID | Escenario | Esperado | Resultado real | Estado |
 |---|---|---|---|---|
@@ -62,8 +62,9 @@ Ejecutados sobre el workflow publicado con datos ficticios; no se envió ningún
 | T21 | Punto de acceso de IA deliberadamente incorrecto en la versión borrador (nunca publicada; restaurada y verificada, cero diferencias) (#112) | Fila guardada como `error_ia`, sin borrador, reserva liberada | Como se esperaba. | Superado |
 | T22 | `Reintentar fallidos` tras restaurar el punto de acceso (#113) | La fila se reprocesa en su sitio, un borrador | Como se esperaba, sin fila nueva. | Superado |
 | T23 | Ejecución de **producción** del workflow publicado con un IBAN ficticio (#114) | IBAN ocultado y marcado; cinco columnas nuevas rellenas; un borrador; sin datos de ejecución guardados | Como se esperaba; n8n responde «no encontrada» para la ejecución, tal como está configurado. | Superado |
+| T24 | **Gmail Trigger**, tres correos ficticios en una misma tanda (#120): una solicitud de presupuesto completa, una pregunta vaga y un correo con instrucciones dirigidas a la IA. Registro: [real-run-2026-10-25.md](real-run-2026-10-25.md) (en inglés) | Tres filas y tres borradores, nada enviado, sin duplicados; ningún precio ni plazo inventado; el correo hostil recibe revisión humana y un borrador seguro | Superado como se esperaba. La prioridad se quedó en `baja` en el caso hostil aunque el correo exigía una alta. Observación de una ejecución, no una prueba de bloqueo | Superado |
 
-**No probado de verdad en la v1.2:** una caída mientras se tiene la reserva, una caída de Sheets o Gmail, un timeout de la IA (todo simulado) y la entrada de correo real por el Gmail Trigger.
+**No probado de verdad en la v1.2:** una caída mientras se tiene la reserva, una caída de Sheets o Gmail, un timeout de la IA (todo simulado) y los correos HTML por el Gmail Trigger (la ejecución real usó texto plano).
 
 ## Qué enseñan estas pruebas
 

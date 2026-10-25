@@ -18,7 +18,7 @@ T01 to T16 were run on the real services while the workflow was at **v1.0** (wit
 - **Duplicate drafts (T09).** In v1.2 the case "two simultaneous runs of the same email" is closed with a claim lock; see T17 and T18 below.
 - **Hostile emails (T04, T16).** v1.2 replaces a risky draft with a fixed holding reply and checks figures against the email; see T19.
 
-What was re-run on the real services for v1.1 (executions #99 to #103) and v1.2 (#104 to #115, #118 and #119), and what each automated test covers, is in [TEST_REPORT.md](TEST_REPORT.md). The review rounds are in [AUDIT.md](AUDIT.md).
+What was re-run on the real services for v1.1 (executions #99 to #103) and v1.2 (#104 to #115 and #118 to #120), and what each automated test covers, is in [TEST_REPORT.md](TEST_REPORT.md). The review rounds are in [AUDIT.md](AUDIT.md).
 
 ## Summary
 
@@ -51,7 +51,7 @@ What was re-run on the real services for v1.1 (executions #99 to #103) and v1.2 
 
 ## Real cases on v1.2
 
-Run on the live workflow with fictional data; no email was sent. Execution numbers are n8n's. T17 is a failure provoked and reproduced on purpose before building the fix.
+Run on the live workflow with fictional data; the workflow sent no email (T24 started from three test emails that the test mailbox sent to itself). Execution numbers are n8n's. T17 is a failure provoked and reproduced on purpose before building the fix.
 
 | ID | Scenario | Expected | Actual result | Status |
 |---|---|---|---|---|
@@ -62,8 +62,9 @@ Run on the live workflow with fictional data; no email was sent. Execution numbe
 | T21 | AI endpoint deliberately wrong in the draft version (never published; restored and verified, zero differences) (#112) | Row saved as `error_ia`, no draft, claim released | As expected. | Passed |
 | T22 | `Reintentar fallidos` after restoring the endpoint (#113) | The row is reprocessed in place, one draft | As expected, no new row. | Passed |
 | T23 | **Production** run of the published workflow with a fictional IBAN (#114) | IBAN masked and flagged; five new columns filled; one draft; no execution data stored | As expected; n8n answers "not found" for the execution, as configured. | Passed |
+| T24 | **Gmail Trigger**, three fictional emails in one batch (#120): a complete quote request, a vague question, and an email with instructions aimed at the AI. Record: [real-run-2026-10-25.md](real-run-2026-10-25.md) | Three rows and three drafts, nothing sent, no duplicates; no invented price or date; the hostile email gets human review and a safe draft | Passed as expected. Priority stayed `baja` in the hostile case although the email demanded a high one. Observation of one run, not a proof of blocking | Passed |
 
-**Not tested for real in v1.2:** a crash while holding a claim, a Sheets or Gmail outage, an AI timeout (all simulated), and incoming mail through the Gmail Trigger.
+**Not tested for real in v1.2:** a crash while holding a claim, a Sheets or Gmail outage, an AI timeout (all simulated), and HTML emails through the Gmail Trigger (the real run used plain text).
 
 ## What these tests teach
 

@@ -156,7 +156,7 @@ The tests run the exported workflow and the real Code-node source on a **simulat
 ### Results
 
 - **Automated:** 242 tests (18 workflow integrity, 38 on the Code nodes, 28 whole-workflow scenarios, 4 load tests, 27 concurrency, 119 adversarial, 8 privacy). All pass. The same suite fails 131 tests against the v1.1 export, which is how the second review round found what needed fixing. The mutation check breaks 31 things one at a time and every one is caught. ESLint reports no errors or warnings on the tests and on the extracted Code nodes, and a GitHub Actions workflow (`.github/workflows/ci.yml`) runs the tests, the lint and the mutation check on every pull request.
-- **Real runs:** 16 manual test cases on the real services (detail in [docs/test-cases.md](docs/test-cases.md), including the failures and their fixes), five real executions of v1.1 for the first audit, and fourteen for v1.2 (#104 to #115, #118 and #119: the duplicate-draft race before and after the lock, and once more on the final published build, a hostile email, an honest email, an AI failure and its retry, and a production run of the published workflow).
+- **Real runs:** 16 manual test cases on the real services (detail in [docs/test-cases.md](docs/test-cases.md), including the failures and their fixes), five real executions of v1.1 for the first audit, and fifteen for v1.2 (#104 to #115 and #118 to #120: the duplicate-draft race before and after the lock, and once more on the final published build, a hostile email, an honest email, an AI failure and its retry, a production run of the published workflow, and three emails picked up by the Gmail Trigger, recorded in [docs/real-run-2026-10-25.md](docs/real-run-2026-10-25.md)).
 - **Load:** 100 fictional emails sent back to back to the real workflow (v1.0): 100 rows and 100 drafts, no duplicates, no draft sent, about 10 minutes. A scripted, repeatable version now runs on the simulation. The real test has not been repeated since the lock was added (the lock costs about six Sheets calls per email, see the limitations).
 - **Measurement:** three emails processed in the same batch took between 15 and 17 seconds in total, about 5 or 6 seconds per email. No time or money savings have been measured and none is claimed.
 
@@ -165,9 +165,9 @@ The tests run the exported workflow and the real Code-node source on a **simulat
 | Level | What it covers |
 |---|---|
 | **Implemented and covered by automated tests** (simulation) | Cleaning and masking, validation rules and the safe template, statuses and review flags, duplicate lookup, the claim lock, the retry path, error logging, and the absence of any send node. 242 tests and a 31-mutation check run on a simulation of n8n, Groq, Sheets and Gmail, and again in CI on Node 20 and 22. |
-| **Verified on the real services** (fictional data, test mailbox) | 16 manual cases, 14 executions of v1.2 and 5 of v1.1: the duplicate-draft race before and after the lock and again on the final build, a hostile email, an honest email, an AI failure and its retry, and a production run. Detail in [docs/TEST_REPORT.md](docs/TEST_REPORT.md). |
+| **Verified on the real services** (fictional data, test mailbox) | 16 manual cases, 15 executions of v1.2 and 5 of v1.1: the duplicate-draft race before and after the lock and again on the final build, a hostile email, an honest email, an AI failure and its retry, and a production run. Detail in [docs/TEST_REPORT.md](docs/TEST_REPORT.md). |
 | **Simulated only** | Outages of Sheets, Gmail or the AI provider, a real AI timeout, a crash while holding a claim, claim expiry, the 100-email batch, and the HTML handling of real Gmail messages. |
-| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a real stream of mail, real screenshots and a recording, a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
+| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a continuous stream of mail (one batch of three emails has been run), real screenshots and a screen recording, a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
 | **Needs a person** | A data-processing agreement and data-protection review, the n8n instance settings (retention, access, redaction), the sender filter and credentials, and reading every draft before anything is sent. |
 
 ## Status and limitations
@@ -214,6 +214,7 @@ docs/
   AUDIT.md                  what the review found, fixed and left open
   TEST_REPORT.md            what was tested, real versus simulated
   READINESS.md              senior-style review: what holds up and what blocks real e-mail
+  real-run-2026-10-25.md    text record of one real run through the Gmail Trigger (3 emails, execution #120)
   KNOWN_LIMITATIONS.md      what it does not do
   test-cases.md             16 manual test cases on the real services (English)
   casos-de-prueba.md        the same, in Spanish

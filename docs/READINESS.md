@@ -26,7 +26,7 @@ An honest assessment of LeadFlow AI v1.2 as if a senior engineer had to decide t
 3. **Concurrency at scale.** The lock is a spreadsheet log. Fine for a small mailbox; for volume use a store with atomic operations.
 4. **A trial on a mailbox with non-sensitive mail**, with a person reading every draft and counting the false alarms of the safe-template rule.
 5. **Alerting** on failed executions and on rows in `error_ia`.
-6. **Real-service tests** of the final build: the 100-e-mail load run, a real outage, the Gmail Trigger path.
+6. **Real-service tests** of the final build: the 100-e-mail load run, a real outage, the Gmail Trigger with a continuous stream (one batch of three e-mails has been run: execution #120).
 
 ## Recommended next steps, in order
 

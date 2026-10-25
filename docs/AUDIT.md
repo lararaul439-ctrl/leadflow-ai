@@ -1,6 +1,6 @@
 # LeadFlow AI audit
 
-Technical review of the workflow in two rounds. The first looked at the workflow as it stood at the start (**v1.0**, repository commit `cd33673`) and ended with **v1.1**. The second round (**v1.2**, findings B-01 to B-07 at the end of this file) closed the open items of the first and went deeper into concurrency, privacy and hostile input. Written so that someone who did not take part can see what was wrong, how I know, what changed and what is still open.
+Technical review of the workflow in two rounds. The first looked at the workflow as it stood at the start (**v1.0**, repository commit `cd33673`) and ended with **v1.1**. The second round (**v1.2**, findings B-01 to B-07 at the end of this file) closed the open items of the first and went deeper into concurrency, privacy and hostile input. Written so that someone who did not take part can see what was wrong, how it is known, what changed and what is still open.
 
 - **Scope:** both n8n workflows (`LeadFlow AI` and `LeadFlow AI - Errores`), the four Code nodes, the node settings, the prompt, the documentation and the earlier manual tests.
 - **Out of scope:** the Gmail, Google Sheets and Groq services themselves, n8n Cloud internals, and anything that needs credentials that are not in the project.
@@ -8,14 +8,14 @@ Technical review of the workflow in two rounds. The first looked at the workflow
 
 ## How to read the evidence
 
-Every finding says how it was established, because a simulation is not a real run and I do not want to blur the two.
+Every finding says how it was established, because a simulation is not a real run and the two must not be blurred.
 
 | Label | Meaning |
 |---|---|
 | **Live** | Reproduced or confirmed in a real execution on the n8n Cloud instance, with the real Google Sheets, Gmail drafts and Groq API. Execution numbers are given. |
 | **Sim** | Reproduced with the automated tests, which run the exported workflow graph and the real Code-node source on an in-memory simulation of n8n, Groq, Sheets and Gmail (see [tests/README.md](../tests/README.md)). This is not an end-to-end test. |
 | **Static** | Read from the exported configuration or the code. |
-| **Deduced** | Follows from how the design works. I could not reproduce it. |
+| **Deduced** | Follows from how the design works. It could not be reproduced. |
 
 Severity: **High** = can lose or leak data, or fail silently in normal use. **Medium** = wrong or degraded behaviour that a person can notice and work around. **Low / Info** = hygiene or something to be aware of.
 
@@ -60,7 +60,7 @@ Totals: 18 findings (4 High, 7 Medium, 5 Low, 2 Info). After the second round no
 
 **Problem.** Only card-like digit sequences were masked, and only in the Gmail path (`Normalizar correo`). IBANs and DNI/NIE numbers were saved in clear text and sent to the model. The test form path (`Edit Fields`) skipped the masking altogether, so the protection depended on which entry point the email used.
 
-**Evidence.** *Sim:* S18 and S23 fail on v1.0. *Live:* execution **#100** (card, ES IBAN, DNI) and **#103** (GB IBAN, NL IBAN, DNI written with a hyphen) show `[número oculto]`, `[IBAN oculto]` and `[documento oculto]` in the sheet. My first IBAN pattern missed GB and NL formats (letters in the bank code) and DNI numbers written with a hyphen; I widened it and confirmed the new version in #103.
+**Evidence.** *Sim:* S18 and S23 fail on v1.0. *Live:* execution **#100** (card, ES IBAN, DNI) and **#103** (GB IBAN, NL IBAN, DNI written with a hyphen) show `[número oculto]`, `[IBAN oculto]` and `[documento oculto]` in the sheet. The first IBAN pattern missed GB and NL formats (letters in the bank code) and DNI numbers written with a hyphen; it was widened and the new version confirmed in #103.
 
 **Fix.** One sanitising step (`Preparar petición IA`) that every entry point and every retry passes through. It masks card numbers, IBANs and DNI/NIE before the data reaches the model, the sheet or the draft prompt. The sender address is not masked because the draft needs it. Masking is idempotent, so retried rows are cleaned again without damage.
 
@@ -118,7 +118,7 @@ An email can try to make the draft contain a phishing link or a contact address 
 
 **Problem.** If two executions process the same email at the same moment (the case behind T09: a manual run while the workflow is published), both can pass the duplicate lookup before either writes. The upsert by `request_id` keeps the sheet at one row, but **both create a Gmail draft**, so the person finds two identical drafts.
 
-**Evidence.** *Sim:* S14 characterises it (one row, two drafts). *Deduced* from the design. I did not reproduce it live.
+**Evidence.** *Sim:* S14 characterises it (one row, two drafts). *Deduced* from the design. It was not reproduced live.
 
 **Update (v1.2).** Fixed with a claim lock, described in B-01. The text below is the reasoning of the first round, kept as history; the "why not" no longer applies.
 
@@ -130,7 +130,7 @@ If the model returned valid JSON that was not an object (for example `[]` or `"o
 
 ### A-12 No explicit timeout on the AI call (Low, fixed by configuration)
 
-The HTTP node had no timeout of its own. It is now 30 seconds with three tries. *Static* and the integrity test check the configuration. I never provoked a real timeout, so the claim is "configured", not "observed".
+The HTTP node had no timeout of its own. It is now 30 seconds with three tries. *Static* and the integrity test check the configuration. A real timeout was never provoked, so the claim is "configured", not "observed".
 
 ### A-13 Error workflow did not identify the email (Low, partly improved)
 
@@ -156,7 +156,7 @@ The README and the test documents described behaviour that v1.1 changes (an API 
 
 The manual load test (T15) was real, but the emails were generated interactively and no script was kept, so nobody could repeat it. `tests/fixtures/load.js` now generates the same 100 fictional emails (seeded; 35 quote requests, 30 orders, 15 information queries, 10 complaints, 10 odd cases) and `tests/load.test.js` runs them on the simulation. The real test remains documented as history, not as something the repository can re-run without a test mailbox.
 
-## What I reviewed and left as it was
+## What was reviewed and left as it was
 
 Not everything needed a change. These parts were well designed and are unchanged:
 
@@ -171,7 +171,7 @@ Not everything needed a change. These parts were well designed and are unchanged
 
 The suite can be pointed at the original export with `LEADFLOW_DIR` (a folder containing the v1.0 `leadflow-ai.json` and `leadflow-errores.json`). Run before any change, the suite of that moment (77 tests) gave **34 passed and 43 failed**. Run again at the end with the final 83 tests, it gives **36 passed and 47 failed**. The ones that pass are behaviours that were already right.
 
-Read the failures as a map of what changed, not as a count of bugs: some tests exercise features that did not exist in v1.0 (the retry entry, the `error_ia` status, the draft gate), and some fail on v1.0 because the Code nodes had a different output shape. The findings above are the ones I confirmed one by one.
+Read the failures as a map of what changed, not as a count of bugs: some tests exercise features that did not exist in v1.0 (the retry entry, the `error_ia` status, the draft gate), and some fail on v1.0 because the Code nodes had a different output shape. The findings above are the ones confirmed one by one.
 
 At the end of the first round (v1.1) the suite had 83 tests (13 workflow integrity, 38 Code-node, 28 scenario, 4 load) and all passed, and the mutation check broke eleven things one at a time.
 
@@ -179,12 +179,12 @@ At the end of the first round (v1.1) the suite had 83 tests (13 workflow integri
 
 ## Not verified
 
-Being explicit about what I did **not** see:
+What was **not** observed:
 
 - A real timeout of the AI call, and a real outage of Google Sheets or Gmail. These are simulated only.
-- Concurrency on the **final** v1.2 build. The lock was observed on real services at the build that introduced it (executions #108 and #109); the lock nodes have not changed since, but the later changes were not re-run under concurrency.
+- A crash while a run holds its claim, and the expiry of a claim: simulated only. Concurrency on the **final** v1.2 build was re-run on the real services after this audit was written (executions #118 and #119: one draft); see [TEST_REPORT.md](TEST_REPORT.md).
 - The Gmail Trigger in production against a real, busy mailbox. The load test with 100 real emails (T15) ran on v1.0 and was not repeated on v1.1 or v1.2; the real executions cited here are single emails. The HTML-to-text step in `Normalizar correo` runs only on Gmail emails, so its hardening (hidden text, bounded parsing) is verified by the simulation and not on real Gmail messages.
-- How n8n Cloud behaves when the manual trigger `Reintentar fallidos` is pressed from the interface by a person (I ran it through the API).
+- How n8n Cloud behaves when the manual trigger `Reintentar fallidos` is pressed from the interface by a person (it was run through the API).
 - The behaviour of the free tier of the model provider with real data. It should not be used with real customer data.
 - Anything about the quality of the model's answers beyond the cases in [test-cases.md](test-cases.md). Five or six repeats per case show a trend, not a guarantee.
 
@@ -237,7 +237,7 @@ Design points that matter: the log is **append-only** (no row is edited, so ther
 
 ### B-03 Prompt injection and unsafe output (High, hardened)
 
-**Method.** I wrote an adversarial suite first (119 cases), ran it against v1.1, and only then changed the code. On v1.1, 92 of the 119 fail. The suite has two halves: hostile emails that must be flagged, cleaned or neutralised, and honest emails that must **not** be flagged (a guard against solving the problem by flagging everything).
+**Method.** An adversarial suite was written first (119 cases), run against v1.1, and only then was the code changed. On v1.1, 92 of the 119 fail. The suite has two halves: hostile emails that must be flagged, cleaned or neutralised, and honest emails that must **not** be flagged (a guard against solving the problem by flagging everything).
 
 **What changed.**
 - *Input cleaning* (`Preparar petición IA`): invisible and direction-control characters, the Unicode "tag" block and zero-width joiners inside words are removed; look-alike letters (full-width, mathematical, enclosed) are normalised; unusual spaces become plain spaces; the sender must be one clean address, otherwise there is no recipient and no draft. Mixed-alphabet words raise a flag.
@@ -263,4 +263,4 @@ Removed from the workflow and the export. The integrity test now requires that e
 
 ### B-07 Invisible characters in deployed code (Low, found while deploying)
 
-When the hardened Code nodes were deployed, the transport layer turned the `\uXXXX` escapes written inside regular expressions into the real characters, some of them invisible and two of them line separators. I found it because I compared every Code node of the live workflow with the repository, node by node, and two differed. Nothing ran in that state (it was a draft). The fix writes those characters in the `\u{XXXX}` form with the `u` flag, which survives, and `tests/workflow-integrity.test.js` now fails if any Code node contains an invisible, control or line-separator character. The check was verified to catch the faulty version. After the fix the comparison with the live workflow shows zero differences.
+When the hardened Code nodes were deployed, the transport layer turned the `\uXXXX` escapes written inside regular expressions into the real characters, some of them invisible and two of them line separators. It was found by comparing every Code node of the live workflow with the repository, node by node: two differed. Nothing ran in that state (it was a draft). The fix writes those characters in the `\u{XXXX}` form with the `u` flag, which survives, and `tests/workflow-integrity.test.js` now fails if any Code node contains an invisible, control or line-separator character. The check was verified to catch the faulty version. After the fix the comparison with the live workflow shows zero differences.

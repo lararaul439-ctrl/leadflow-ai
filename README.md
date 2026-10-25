@@ -200,6 +200,7 @@ The most useful part of the project was testing it with awkward cases:
 
 ```
 README.md, README.es.md     English (default) and Spanish
+LICENSE                     MIT license
 .env.example                checklist of the values to configure (no secrets, not read by anything)
 package.json                scripts for the tests and the lint; no dependencies
 eslint.config.js            static-analysis rules (no plugins needed)
@@ -224,7 +225,7 @@ docs/
 
 ## License
 
-No license has been chosen yet, so all rights are reserved by default. If you would like to reuse the code, please open an issue.
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Raul Vicente Lara.
 
 ## Author
 

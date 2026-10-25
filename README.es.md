@@ -200,6 +200,7 @@ Lo más útil del proyecto fue probarlo con casos incómodos:
 
 ```
 README.md, README.es.md     inglés (por defecto) y español
+LICENSE                     licencia MIT
 .env.example                lista de valores a configurar (sin secretos, no lo lee nada)
 package.json                scripts de las pruebas y del lint; sin dependencias
 eslint.config.js            reglas del análisis estático (no necesita plugins)
@@ -224,7 +225,7 @@ docs/
 
 ## Licencia
 
-Todavía no se ha elegido una licencia, así que por defecto todos los derechos están reservados. Si quieres reutilizar el código, abre un issue.
+Publicado bajo la [licencia MIT](LICENSE). Copyright (c) 2026 Raul Vicente Lara.
 
 ## Autoría
 

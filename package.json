@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "LeadFlow AI: n8n workflow that triages customer emails and drafts replies for human review. This package only holds the automated tests.",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "test": "node --test",
     "mutation-check": "node tests/mutation-check.js",

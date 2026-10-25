@@ -97,9 +97,15 @@ This is the row that ended up in the sheet (a real execution, #103 on v1.1, with
 
 The numbers never reached the model or the sheet, and a Gmail **draft** asking for the missing details was created for a person to read. Nothing was sent.
 
+### Demo video
+
+[![Frame from the demo video: the Gmail draft for the email that gave orders to the AI, a fixed holding reply](docs/img/real/video-cover.png)](docs/media/leadflow-ai-real-run-2026-10-25.mp4)
+
+**[Watch the demo video](docs/media/leadflow-ai-real-run-2026-10-25.mp4)** (2 min 23 s, MP4, 4 MB, no sound). A screen recording of the real n8n, Google Sheets and Gmail of the test environment, made after the run with three fictional emails: the input emails, the workflow, the rows, the claim log, the empty error log and the three drafts. The URL bar is blurred; nothing was sent.
+
 ### Real screenshots
 
-Frames from a screen recording of the test environment, made on 25 October 2026 after a real run of three fictional emails through the Gmail Trigger (execution #120, recorded in [docs/real-run-2026-10-25.md](docs/real-run-2026-10-25.md)). The URL bar is blurred. The recording itself is not published here.
+Frames from a screen recording of the test environment, made on 25 October 2026 after a real run of three fictional emails through the Gmail Trigger (execution #120, recorded in [docs/real-run-2026-10-25.md](docs/real-run-2026-10-25.md)). The URL bar is blurred. The full recording is the demo video above.
 
 | | |
 |---|---|
@@ -180,7 +186,7 @@ The tests run the exported workflow and the real Code-node source on a **simulat
 | **Implemented and covered by automated tests** (simulation) | Cleaning and masking, validation rules and the safe template, statuses and review flags, duplicate lookup, the claim lock, the retry path, error logging, and the absence of any send node. 242 tests and a 31-mutation check run on a simulation of n8n, Groq, Sheets and Gmail, and again in CI on Node 20 and 22. |
 | **Verified on the real services** (fictional data, test mailbox) | 16 manual cases, 15 executions of v1.2 and 5 of v1.1: the duplicate-draft race before and after the lock and again on the final build, a hostile email, an honest email, an AI failure and its retry, and a production run. Detail in [docs/TEST_REPORT.md](docs/TEST_REPORT.md). |
 | **Simulated only** | Outages of Sheets, Gmail or the AI provider, a real AI timeout, a crash while holding a claim, claim expiry, the 100-email batch, and the HTML handling of real Gmail messages. |
-| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a continuous stream of mail (one batch of three emails has been run), a published screen recording (one has been made, frames from it are above), a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
+| **Not done yet** | The 100-email load test on the final build (`npm run load-emails` prints the emails), the Gmail Trigger with a continuous stream of mail (one batch of three emails has been run), a recording of a run as it happens (the demo video shows the result afterwards), a measurement of classification quality on labelled data, and any run on a company mailbox or with real customer data. |
 | **Needs a person** | A data-processing agreement and data-protection review, the n8n instance settings (retention, access, redaction), the sender filter and credentials, and reading every draft before anything is sent. |
 
 ## Status and limitations
@@ -234,6 +240,7 @@ docs/
   engineering-notes.md      problems found while testing and how they were fixed (English)
   notas-de-ingenieria.md    the same, in Spanish
   img/                      renderings and real screenshots used in this README (see img/README.md)
+  media/                    the demo video, a screen recording of the test environment
 ```
 
 ## Contact and collaboration

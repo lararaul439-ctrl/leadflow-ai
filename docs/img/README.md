@@ -23,3 +23,4 @@ Frames from a screen recording of the test environment made on 2026-10-25, after
 | `real/sheet-bloqueos.png` | The `bloqueos` tab: one claim and one release per email, all from execution 120 |
 | `real/gmail-draft-a.png` | The draft for the quote request (case A), opened and closed without changes |
 | `real/gmail-draft-c.png` | The draft for the email with instructions aimed at the AI (case C): a fixed holding reply |
+| `real/video-cover.png` | A frame of the edited demo video ([../media/](../media/)), used as its preview in the README |

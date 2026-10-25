@@ -20,20 +20,20 @@
           "value": "TU_ID_DE_HOJA",
           "mode": "list",
           "cachedResultName": "LeadFlow_Registro"
-          },
+        },
         "sheetName": {
           "__rl": true,
           "value": 36392606,
           "mode": "list",
           "cachedResultName": "errores"
-          },
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
             "fecha": "={{ $now }}",
             "flujo": "={{ $json.workflow.name }}",
             "nodo": "={{ $json.execution.lastNodeExecuted }}",
-            "mensaje": "={{ $json.execution.error.message }}",
+            "mensaje": "={{ String($json.execution.error.message || '').replace(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/g, '[correo oculto]').replace(/\\s+/g, ' ').slice(0, 300) }}",
             "url_ejecucion": "={{ $json.execution.url }}"
           },
           "matchingColumns": [],
@@ -87,7 +87,9 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
-        "options": {}
+        "options": {
+          "cellFormat": "RAW"
+        }
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -123,7 +125,11 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "all"
   },
   "nodeGroups": [],
   "tags": []

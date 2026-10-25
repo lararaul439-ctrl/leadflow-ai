@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests and lint (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # No dependencies to install: the tests use Node's built-in runner.
+      - run: npm test
+      - run: npm run lint
+
+  mutation-check:
+    name: Mutation check
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Breaks a copy of the workflow in 31 ways, one at a time; every break must make a test fail.
+      - run: npm run mutation-check

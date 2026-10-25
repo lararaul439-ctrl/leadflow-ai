@@ -34,4 +34,4 @@ An honest assessment of LeadFlow AI v1.2 as if a senior engineer had to decide t
 2. Move the lock and the log to a store with atomic operations; archive the claim log automatically.
 3. Add alerting for failures and for rows waiting in `error_ia`.
 4. Evaluate classification quality on a labelled set of e-mails instead of repeats.
-5. Add real screenshots and a short recording of a run (the README currently shows renderings).
+5. Publish the short screen recording of a run (frames from it are already in the README, next to the renderings).

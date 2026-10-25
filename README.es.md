@@ -97,9 +97,22 @@ Esta es la fila que quedó en la hoja (una ejecución real, la #103 de la v1.1, 
 
 Los números no llegaron al modelo ni a la hoja, y se creó un **borrador** en Gmail pidiendo los datos que faltan, para que lo lea una persona. No se envió nada.
 
+### Capturas reales
+
+Fotogramas de una grabación de pantalla del entorno de pruebas, hecha el 25 de octubre de 2026 después de una ejecución real de tres correos ficticios por el Gmail Trigger (ejecución #120, registrada en [docs/real-run-2026-10-25.md](docs/real-run-2026-10-25.md), en inglés). La barra de direcciones está difuminada. La grabación en sí no se publica aquí.
+
+| | |
+|---|---|
+| ![El workflow publicado de LeadFlow AI abierto en el editor de n8n](docs/img/real/n8n-workflow.png) | ![La pestaña de ejecuciones del workflow en n8n, sin ejecuciones guardadas](docs/img/real/n8n-executions.png) |
+| **n8n:** el workflow publicado. | **n8n:** las ejecuciones correctas no se guardan, a propósito. |
+| ![La pestaña solicitudes con revisión humana, avisos, cliente, empresa, servicio y cantidad de los tres correos](docs/img/real/sheet-solicitudes.png) | ![La pestaña bloqueos con una reserva y una liberación por correo, todas de la ejecución 120](docs/img/real/sheet-bloqueos.png) |
+| **Google Sheets:** avisos de revisión y datos extraídos. | **Google Sheets:** una reserva y una liberación por correo. |
+| ![Borrador de Gmail para la solicitud de presupuesto que pide los datos que faltan, sin precio ni plazo](docs/img/real/gmail-draft-a.png) | ![Borrador de Gmail para el correo con instrucciones dirigidas a la IA: una respuesta de espera fija](docs/img/real/gmail-draft-c.png) |
+| **Gmail:** el borrador de una solicitud de presupuesto pide lo que falta. | **Gmail:** el correo que daba órdenes a la IA recibe una respuesta de espera fija. |
+
 ### Ilustraciones
 
-Las cuatro imágenes de abajo son **reconstrucciones, no capturas de pantalla**. Están dibujadas a partir de los datos de una ejecución real en la instancia de pruebas (correos ficticios, no se envió nada) y del archivo exportado del workflow, y cada una lo dice en su pie. Todavía no se incluyen capturas reales ni grabación. Las imágenes están en inglés.
+Las cuatro imágenes de abajo son **reconstrucciones, no capturas de pantalla**. Están dibujadas a partir de los datos de una ejecución real en la instancia de pruebas (correos ficticios, no se envió nada) y del archivo exportado del workflow, y cada una lo dice en su pie. Las capturas reales están en la sección anterior. Las imágenes están en inglés.
 
 **Un correo entra, una solicitud queda registrada.** El IBAN y el documento de identidad se ocultan antes del modelo y antes de la hoja.
 
@@ -167,7 +180,7 @@ Las pruebas ejecutan el workflow exportado y el código real de los nodos de có
 | **Implementado y cubierto por pruebas automáticas** (simulación) | Limpieza y enmascarado, reglas de validación y plantilla segura, estados y avisos de revisión, búsqueda de duplicados, la reserva, la ruta de reintento, el registro de errores y la ausencia de cualquier nodo de envío. 242 pruebas y una comprobación de 31 mutaciones sobre una simulación de n8n, Groq, Sheets y Gmail, y de nuevo en la CI con Node 20 y 22. |
 | **Verificado en los servicios reales** (datos ficticios, buzón de pruebas) | 16 casos manuales, 15 ejecuciones de la v1.2 y 5 de la v1.1: la carrera de borradores duplicados antes y después de la reserva y otra vez sobre la versión final, un correo hostil, uno honesto, un fallo de la IA y su reintento, y una ejecución de producción. Detalle en [docs/TEST_REPORT.md](docs/TEST_REPORT.md) (en inglés). |
 | **Solo simulado** | Caídas de Sheets, Gmail o del proveedor de IA, un timeout real de la IA, un fallo mientras se mantiene una reserva, la caducidad de una reserva, el lote de 100 correos y el tratamiento del HTML de correos reales de Gmail. |
-| **Pendiente** | La prueba de carga de 100 correos sobre la versión final (`npm run load-emails` imprime los correos), el Gmail Trigger con un flujo continuo de correo (se ha probado una tanda de tres correos), capturas reales y una grabación de pantalla, una medición de la calidad de la clasificación con datos etiquetados, y cualquier uso en el buzón de una empresa o con datos reales de clientes. |
+| **Pendiente** | La prueba de carga de 100 correos sobre la versión final (`npm run load-emails` imprime los correos), el Gmail Trigger con un flujo continuo de correo (se ha probado una tanda de tres correos), publicar una grabación de pantalla (ya se ha hecho una; arriba hay fotogramas de ella), una medición de la calidad de la clasificación con datos etiquetados, y cualquier uso en el buzón de una empresa o con datos reales de clientes. |
 | **Requiere a una persona** | Un contrato de encargado del tratamiento y una revisión de protección de datos, los ajustes de la instancia de n8n (retención, acceso, redacción), el filtro de remitente y las credenciales, y leer cada borrador antes de enviar nada. |
 
 ## Estado y límites
@@ -214,13 +227,13 @@ docs/
   AUDIT.md                  lo que encontró la revisión, lo corregido y lo abierto (inglés)
   TEST_REPORT.md            qué se probó, real frente a simulado (inglés)
   READINESS.md              revisión de madurez: qué aguanta y qué impide usar correo real (inglés)
-  real-run-2026-10-25.md    registro en texto de una ejecución real por el Gmail Trigger (3 correos, ejecución #120) (inglés)
+  real-run-2026-10-25.md    registro de una ejecución real por el Gmail Trigger (3 correos, ejecución #120) (inglés)
   KNOWN_LIMITATIONS.md      lo que no hace (inglés)
   test-cases.md             16 casos manuales sobre los servicios reales (inglés)
   casos-de-prueba.md        lo mismo, en español
   engineering-notes.md      problemas encontrados al probar y cómo se corrigieron (inglés)
   notas-de-ingenieria.md    lo mismo, en español
-  img/                      reconstrucciones usadas en este README (ver img/README.md)
+  img/                      reconstrucciones y capturas reales usadas en este README (ver img/README.md)
 ```
 
 ## Contacto y colaboración

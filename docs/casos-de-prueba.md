@@ -1,8 +1,21 @@
 # Casos de prueba de LeadFlow AI
 
+[English version](test-cases.md)
+
 Todas las pruebas se hicieron con datos ficticios, enviando correos desde una cuenta de Gmail de pruebas a sí misma, con el flujo publicado y sin intervención manual, salvo donde se indica. Las ejecuciones citadas son las de n8n.
 
 La IA no responde siempre igual, así que un caso superado una vez no es una garantía. Por eso la validación no depende del modelo.
+
+## Con qué versión se ejecutaron
+
+T01 a T16 se ejecutaron sobre los servicios reales con el workflow en la **v1.0** (con las correcciones que produjo cada caso). La revisión que llevó a la **v1.1** cambió parte del comportamiento, así que algunos «resultados reales» de abajo describen la v1.0 y ya no coinciden con lo que hace el workflow hoy:
+
+- **Fallos de la API de IA (T11, T13).** En la v1.0 un fallo persistente paraba la ejecución y solo quedaba anotado en la pestaña `errores`. En la v1.1 el nodo de IA continúa tras sus reintentos, el correo se guarda en `solicitudes` con estado `error_ia` y el motivo en `validation_flags`, el resto de la tanda sigue y `Reintentar fallidos` reintenta la fila. Los fallos de Google Sheets o Gmail siguen parando la ejecución y se anotan en `errores`.
+- **Enmascarado (T08).** La v1.1 oculta también IBAN y DNI/NIE, en todas las entradas, y no solo números de tarjeta en la vía de Gmail.
+- **Borradores.** La v1.1 crea borrador solo cuando el resultado es válido, el texto no está vacío y hay destinatario.
+- **T15 (prueba de carga)** se hizo con la v1.0 y no se ha repetido con correos reales en la v1.1. Existe una versión con guion y repetible sobre la simulación (`npm run load-emails`, `tests/load.test.js`).
+
+Lo que se repitió para la v1.1 sobre los servicios reales (ejecuciones #99 a #103) y lo que cubre cada prueba automática está en [TEST_REPORT.md](TEST_REPORT.md) (en inglés). La revisión está en [AUDIT.md](AUDIT.md) (en inglés).
 
 ## Resumen
 
@@ -47,3 +60,5 @@ La IA no responde siempre igual, así que un caso superado una vez no es una gar
 2. Envía los correos desde la cuenta de pruebas a sí misma.
 3. Espera uno o dos minutos por tanda. No pulses "Execute workflow" con el flujo publicado.
 4. Compara la fila de la hoja, el borrador y el aviso de validación con la columna "Esperado".
+
+Las pruebas automáticas (`npm test`) cubren las mismas situaciones y muchas más sobre una simulación, sin enviar nada: ver [tests/README.md](../tests/README.md). `npm run load-emails` imprime los 100 correos ficticios de T15 para repetir la prueba de carga real contra un buzón de pruebas.

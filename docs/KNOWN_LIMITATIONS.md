@@ -51,7 +51,7 @@ What LeadFlow AI does **not** do, or does not do reliably, as of v1.2. Each item
 - **The automated suite runs on a simulation**, not on n8n, Gmail, Sheets or Groq. Its assumptions are listed in [tests/README.md](../tests/README.md). That includes all the concurrency and adversarial tests; only the cases listed as "Real executions" in [TEST_REPORT.md](TEST_REPORT.md) were observed on the real services.
 - **The 100-email load test on real services was run on v1.0** and not repeated on v1.1 or v1.2. The scripted version is simulated.
 - **Concurrency was observed for real twice**: at the build that introduced the lock (executions #108 and #109) and on the final published build (#118 and #119: two simultaneous runs over the same request gave one draft). A crash while holding a claim and the expiry of a claim remain simulated only.
-- **The Gmail Trigger path was not exercised with real incoming mail in v1.2**, because that would mean sending emails to the test mailbox. Everything after `Normalizar correo` was exercised from the test form, and the HTML handling in that node is verified by the simulation only.
+- **The Gmail Trigger path was exercised once on the final build**: three fictional plain-text emails in one batch (execution #120, [real-run-2026-10-25.md](real-run-2026-10-25.md)). A continuous or busy stream was not, and the HTML handling in `Normalizar correo` is still verified by the simulation only.
 - **The workflows were exported from n8n Cloud 2.44.6.** Import into other versions may need small adjustments; nodes may show warnings after import.
 - **The n8n Cloud trial is time-limited.** The exported JSON files in this repository are the durable copy of the project.
 

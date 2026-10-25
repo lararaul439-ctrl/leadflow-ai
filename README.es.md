@@ -165,7 +165,7 @@ Los nombres de workflows, nodos, pestañas y estados están en español porque e
 
 ```
 npm test                  # 242 pruebas, unos 4 segundos, nada que instalar (Node.js 20+)
-npm run mutation-check    # rompe el workflow de 31 maneras (unos 12 minutos); cada rotura debe detectarse
+npm run mutation-check    # rompe el workflow de 31 maneras (unos minutos); cada rotura debe detectarse
 npm run lint              # análisis estático de las pruebas y de los nodos de código (descarga ESLint al vuelo; no se añade ninguna dependencia)
 npm run load-emails       # imprime los 100 correos ficticios de la prueba de carga
 ```

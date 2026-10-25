@@ -15,6 +15,7 @@ The report separates two kinds of evidence, and I ask the reader not to merge th
 | `npm run mutation-check` (31 deliberate breaks) | 31 of 31 caught |
 | `npm run lint` (ESLint 10.1.0 on the tests, the config and the 6 extracted Code nodes, 20 files) | 0 errors, 0 warnings. The rule `no-misleading-character-class` is switched off for the Code nodes on purpose: the sanitiser lists invisible and combining characters to strip them |
 | markdownlint (structure rules, line length and similar style rules off) | Clean after removing blank lines at the end of one file. The only other hit is the second language title in `PORTFOLIO_DESCRIPTION.md`, which is intended |
+| GitHub Actions (`.github/workflows/ci.yml`) on the pull request, commit `8a465df` | Tests and lint on Node 20 and Node 22, and the mutation check: all three jobs succeeded. This is the same simulated suite on a clean machine, not a test of the real services |
 | Same suite against the v1.1 export | 111 passed, 131 failed (the new files fail there by design, see [AUDIT.md](AUDIT.md)) |
 | Real executions on v1.2 | #110 to #115 (below), all as expected |
 | Real executions of the lock | #108 and #109 (one draft where two runs used to give two) |

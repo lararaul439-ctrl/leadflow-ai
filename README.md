@@ -165,7 +165,7 @@ The workflow, node, tab and status names are in Spanish, because the project was
 
 ```
 npm test                  # 242 tests, about 4 seconds, nothing to install (Node.js 20+)
-npm run mutation-check    # breaks the workflow 31 ways (about 12 minutes); every break must be caught
+npm run mutation-check    # breaks the workflow 31 ways (a few minutes); every break must be caught
 npm run lint              # static analysis of the tests and of the Code nodes (downloads ESLint on the fly; no dependency is added)
 npm run load-emails       # prints the 100 fictional load-test emails
 ```

@@ -2,7 +2,7 @@
 
 ```
 npm test                  # 242 tests, about 4 seconds, no dependencies, no network
-npm run mutation-check    # breaks the workflow in 31 ways, one at a time (about 12 minutes); every break must make a test fail
+npm run mutation-check    # breaks the workflow in 31 ways, one at a time (a few minutes); every break must make a test fail
 npm run lint              # extracts the Code nodes to .lint/nodes and runs ESLint over them and over tests/ (needs the network once, to fetch ESLint)
 npm run load-emails       # prints the 100 fictional load-test emails as JSON (to send by hand to a TEST mailbox)
 ```
